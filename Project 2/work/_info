@@ -1,0 +1,92 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dC:/Users/Murray Kornelsen/Documents/ECSE425/Project 2
+Epipeline
+Z1 w1579369802
+Z2 DPx4 ieee 11 numeric_std 0 22 :ASDNFgHXf_ih3J@9F3Ze1
+Z3 DPx3 std 6 textio 0 22 zE1`LPoLg^DX3Oz^4Fj1K3
+Z4 DPx4 ieee 14 std_logic_1164 0 22 eNV`TJ_GofJTzYa?f<@Oe1
+R0
+Z5 8pipeline.vhd
+Z6 Fpipeline.vhd
+l0
+L5
+VY:CEeARzJj_<cUYh`hVCm1
+!s100 @H4F`eCPemC7k0^AkRR@Z3
+Z7 OP;C;10.4a;61
+32
+Z8 !s110 1579882258
+!i10b 1
+Z9 !s108 1579882258.000000
+Z10 !s90 -reportprogress|300|pipeline.vhd|
+Z11 !s107 pipeline.vhd|
+!i113 1
+o-O0
+Z12 tExplicit 1
+Abehavioral
+R2
+R3
+R4
+DEx4 work 8 pipeline 0 22 Y:CEeARzJj_<cUYh`hVCm1
+l15
+L13
+VF<TLkVn08?EDZIZc`W@9l3
+!s100 >F3;EBI;HnUB80bZ1X3MH0
+R7
+32
+R8
+!i10b 1
+R9
+R10
+R11
+!i113 1
+o-O0
+R12
+Epipeline_tb
+Z13 w1579882256
+R2
+R3
+R4
+R0
+Z14 8pipeline_tb.vhd
+Z15 Fpipeline_tb.vhd
+l0
+L5
+VQCV`40Z4okI`U4;danzeP3
+!s100 aMLU^Bgi<MG2ZzzV]6?bf3
+R7
+32
+R8
+!i10b 1
+R9
+Z16 !s90 -reportprogress|300|pipeline_tb.vhd|
+Z17 !s107 pipeline_tb.vhd|
+!i113 1
+o-O0
+R12
+Abehaviour
+R2
+R3
+R4
+Z18 DEx4 work 11 pipeline_tb 0 22 QCV`40Z4okI`U4;danzeP3
+l40
+L8
+Ve>QhfLC1`IeW<:Xc0?N=f3
+!s100 ;T@dPFII=bi:G@9X`3Dz`3
+R7
+32
+R8
+!i10b 1
+R9
+R16
+R17
+!i113 1
+o-O0
+R12

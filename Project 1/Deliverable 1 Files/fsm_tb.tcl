@@ -4,6 +4,7 @@ proc AddWaves {} {
     add wave -position end sim:/fsm_tb/s_reset
     add wave -position end sim:/fsm_tb/s_input
     add wave -position end sim:/fsm_tb/s_output
+    radix signal sim:/fsm_tb/s_input ascii -showbase a
 }
 
 vlib work
@@ -22,4 +23,4 @@ force -deposit clk 0 0 ns, 1 0.5 ns -repeat 1 ns
 AddWaves
 
 ;# Run for 50 ns
-run 50ns
+run 500ns
