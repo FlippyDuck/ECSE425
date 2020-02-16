@@ -25,7 +25,7 @@ vcom memory.vhd
 vcom cache_tb.vhd
 
 ;# Start simulation
-vsim -t 100ps cache_tb
+vsim -t 1ps cache_tb
 
 ;# Generate a clock with 1ns period
 force -deposit clk 0 0 ns, 1 0.5 ns -repeat 1 ns
