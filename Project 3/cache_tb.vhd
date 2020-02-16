@@ -9,7 +9,7 @@ architecture behavior of cache_tb is
 
 component cache is
 generic(
-    ram_size : INTEGER := 32768;
+    ram_size : INTEGER := 32768
 );
 port(
     clock : in std_logic;
@@ -116,7 +116,179 @@ test_process : process
 begin
 
 -- put your tests here
-	
+    reset <= '1';
+    wait for clk_period;
+    reset <= '0';
+    wait for clk_period;
+
+    -- address <= 14;
+    -- writedata <= X"12";
+    -- memwrite <= '1';
+    -- wait until rising_edge(waitrequest);
+    -- memwrite <= '0';
+    -- memread <= '1';
+    -- wait until rising_edge(waitrequest);
+    -- assert readdata = X"12" report "write unsuccessful" severity error;
+    -- memread <= '0';
+    -- wait for clk_period;
+    -- address <= 12; memread <= '1';
+    -- wait until rising_edge(waitrequest);
+    -- assert readdata = X"0C" report "write unsuccessful" severity error;
+    -- memread <= '0';
+    s_addr <= std_logic_vector(to_unsigned(16#0#, 32));
+    s_read <= '1';
+    wait until rising_edge(s_waitrequest);
+    assert s_readdata = X"03020100" report "read 0 failed" severity error;
+    s_read <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#14#, 32));
+    s_read <= '1';
+    wait until rising_edge(s_waitrequest);
+    assert s_readdata = X"17161514" report "read failed" severity error;
+    s_read <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#14#, 32));
+    s_read <= '1';
+    wait until rising_edge(s_waitrequest);
+    assert s_readdata = X"17161514" report "read failed" severity error;
+    s_read <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#1C#, 32));
+    s_read <= '1';
+    wait until rising_edge(s_waitrequest);
+    assert s_readdata = X"1F1E1D1C" report "read failed" severity error;
+    s_read <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#14#, 32));
+    s_writedata <= X"FFFFFFFF";
+    s_write <= '1';
+    wait until rising_edge(s_waitrequest);
+    s_write <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#14#, 32));
+    s_read <= '1';
+    wait until rising_edge(s_waitrequest);
+    assert s_readdata = X"FFFFFFFF" report "read failed" severity error;
+    s_read <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#414#, 32));
+    s_read <= '1';
+    wait until rising_edge(s_waitrequest);
+    assert s_readdata = X"17161514" report "read failed" severity error;
+    s_read <= '0';
+    wait for clk_period;
+    
+    s_addr <= std_logic_vector(to_unsigned(16#14#, 32));
+    s_read <= '1';
+    wait until rising_edge(s_waitrequest);
+    assert s_readdata = X"FFFFFFFF" report "read failed" severity error;
+    s_read <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#14#, 32));
+    s_writedata <= X"DEADBEEF";
+    s_write <= '1';
+    wait until rising_edge(s_waitrequest);
+    s_write <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#14#, 32));
+    s_read <= '1';
+    wait until rising_edge(s_waitrequest);
+    assert s_readdata = X"DEADBEEF" report "read failed" severity error;
+    s_read <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#14#, 32));
+    s_writedata <= X"12345678";
+    s_write <= '1';
+    wait until rising_edge(s_waitrequest);
+    s_write <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#14#, 32));
+    s_read <= '1';
+    wait until rising_edge(s_waitrequest);
+    assert s_readdata = X"12345678" report "read failed" severity error;
+    s_read <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#414#, 32));
+    s_writedata <= X"DEADBEEF";
+    s_write <= '1';
+    wait until rising_edge(s_waitrequest);
+    s_write <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#414#, 32));
+    s_read <= '1';
+    wait until rising_edge(s_waitrequest);
+    assert s_readdata = X"DEADBEEF" report "read failed" severity error;
+    s_read <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#424#, 32));
+    s_writedata <= X"DEADBEEF";
+    s_write <= '1';
+    wait until rising_edge(s_waitrequest);
+    s_write <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#424#, 32));
+    s_read <= '1';
+    wait until rising_edge(s_waitrequest);
+    assert s_readdata = X"DEADBEEF" report "read failed" severity error;
+    s_read <= '0';
+    wait for clk_period;
+    
+    s_addr <= std_logic_vector(to_unsigned(16#434#, 32));
+    s_read <= '1';
+    wait until rising_edge(s_waitrequest);
+    assert s_readdata = X"37363534" report "read failed" severity error;
+    s_read <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#634#, 32));
+    s_writedata <= X"DEADBEEF";
+    s_write <= '1';
+    wait until rising_edge(s_waitrequest);
+    s_write <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#634#, 32));
+    s_read <= '1';
+    wait until rising_edge(s_waitrequest);
+    assert s_readdata = X"DEADBEEF" report "read failed" severity error;
+    s_read <= '0';
+    wait for clk_period;
+
+    reset <= '1';
+    wait for clk_period;
+    reset <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#0#, 32));
+    s_writedata <= X"DEADBEEF";
+    s_write <= '1';
+    wait until rising_edge(s_waitrequest);
+    s_write <= '0';
+    wait for clk_period;
+
+    s_addr <= std_logic_vector(to_unsigned(16#0#, 32));
+    s_read <= '1';
+    wait until rising_edge(s_waitrequest);
+    assert s_readdata = X"DEADBEEF" report "read failed" severity error;
+    s_read <= '0';
+    wait for clk_period;
+
+    report "test over";
+    wait;
 end process;
 	
 end;

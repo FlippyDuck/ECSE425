@@ -1,0 +1,174 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dC:/Users/murra/Documents/ECSE425/Project 3
+Ecache
+Z1 w1581878333
+Z2 DPx4 ieee 11 numeric_std 0 22 :ASDNFgHXf_ih3J@9F3Ze1
+Z3 DPx3 std 6 textio 0 22 zE1`LPoLg^DX3Oz^4Fj1K3
+Z4 DPx4 ieee 14 std_logic_1164 0 22 eNV`TJ_GofJTzYa?f<@Oe1
+R0
+Z5 8cache.vhd
+Z6 Fcache.vhd
+l0
+L5
+VV>=c54h;I[cJ2[`RXg6a<0
+!s100 aAT4SH5jC`OUUQ@S6Pf^32
+Z7 OP;C;10.4a;61
+32
+Z8 !s110 1581879639
+!i10b 1
+Z9 !s108 1581879639.000000
+Z10 !s90 -reportprogress|300|cache.vhd|
+Z11 !s107 cache.vhd|
+!i113 1
+o-O0
+Z12 tExplicit 1
+Aarch
+R2
+R3
+R4
+DEx4 work 5 cache 0 22 V>=c54h;I[cJ2[`RXg6a<0
+l45
+L30
+VNGKReJEDC;UE27SUzc_dZ3
+!s100 VBmOC3FJmiF`eHo[VzeRS0
+R7
+32
+R8
+!i10b 1
+R9
+R10
+R11
+!i113 1
+o-O0
+R12
+Ecache_tb
+Z13 w1581879605
+R2
+R3
+R4
+R0
+Z14 8cache_tb.vhd
+Z15 Fcache_tb.vhd
+l0
+L5
+VUfG9XTOHD=MfZ2FL?jNlL1
+!s100 N8hTJD?ado=UI;TQE4:Ql3
+R7
+32
+R8
+!i10b 1
+R9
+Z16 !s90 -reportprogress|300|cache_tb.vhd|
+Z17 !s107 cache_tb.vhd|
+!i113 1
+o-O0
+R12
+Abehavior
+R2
+R3
+R4
+Z18 DEx4 work 8 cache_tb 0 22 UfG9XTOHD=MfZ2FL?jNlL1
+l71
+L8
+Z19 VL@n@Dl5DC38XCEmkikZK@2
+Z20 !s100 cKO`lE9SBO5n57gIkU_<N0
+R7
+32
+R8
+!i10b 1
+R9
+R16
+R17
+!i113 1
+o-O0
+R12
+Ememory
+Z21 w1581873728
+R2
+R3
+R4
+R0
+Z22 8memory.vhd
+Z23 Fmemory.vhd
+l0
+L6
+V`jFEc]cT[GXAlUe:b5^>o0
+!s100 TL`MNK5NTn0=f?i`Ph2JS3
+R7
+32
+R8
+!i10b 1
+R9
+Z24 !s90 -reportprogress|300|memory.vhd|
+Z25 !s107 memory.vhd|
+!i113 1
+o-O0
+R12
+Artl
+R2
+R3
+R4
+DEx4 work 6 memory 0 22 `jFEc]cT[GXAlUe:b5^>o0
+l29
+L23
+VEda>g^71EZN_[T@B17b:L3
+!s100 9:COf47CXYXb]FMIWW=P42
+R7
+32
+R8
+!i10b 1
+R9
+R24
+R25
+!i113 1
+o-O0
+R12
+Ememory_tb
+Z26 w1581386409
+R2
+R3
+R4
+R0
+Z27 8memory_tb.vhd
+Z28 Fmemory_tb.vhd
+l0
+L5
+V4>]m9FnDc5EMe07:icRQm0
+!s100 K:h_7;_e46:2;TAj@4dAB3
+R7
+32
+Z29 !s110 1581873392
+!i10b 1
+Z30 !s108 1581873392.000000
+Z31 !s90 -reportprogress|300|memory_tb.vhd|
+Z32 !s107 memory_tb.vhd|
+!i113 1
+o-O0
+R12
+Abehaviour
+R2
+R3
+R4
+DEx4 work 9 memory_tb 0 22 4>]m9FnDc5EMe07:icRQm0
+l38
+L8
+V?C:Dl2`4WigaAU1d>klB71
+!s100 :i96VH_8DL4G91ZkR7MdH1
+R7
+32
+R29
+!i10b 1
+R30
+R31
+R32
+!i113 1
+o-O0
+R12
