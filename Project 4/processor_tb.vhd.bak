@@ -58,7 +58,7 @@ ARCHITECTURE behavior OF processor_tb IS
     COMPONENT memory IS
         GENERIC (
             ram_size : INTEGER := 32768;
-            mem_delay : TIME := 1 ns;
+            mem_delay : TIME := 10 ns;
             clock_period : TIME := 1 ns
         );
         PORT (
@@ -236,7 +236,6 @@ BEGIN
         constant c_WIDTH : natural := 32;
         Variable outputline : std_logic_vector (31 downto 0);
     BEGIN
-        wait for clk_period;
         imem_addr<=input2im_addr;
         dmem_addr<=input2dm_addr;
 
@@ -258,8 +257,7 @@ BEGIN
         ASSERT filestatus = OPEN_OK REPORT "file_open_status /= file_ok" SEVERITY FAILURE; -- end simulation
 
         WHILE NOT ENDFILE (file_pointer) LOOP
-            wait for clk_period;
-            --WAIT UNTIL falling_edge(clk); -- once per clock
+            WAIT UNTIL falling_edge(clk); -- once per clock
             readline (file_pointer, line_input);
             REPORT line_input.all;
             read (line_input, line_content);
@@ -269,7 +267,6 @@ BEGIN
             
             wait until rising_edge(m2ic_waitrequest);
             ic2m_write <= '0';
-            REPORT " here1 ";
 
             wait for clk_period;
             input2im_addr <= line_number*4+1;
@@ -294,7 +291,6 @@ BEGIN
 
             wait until rising_edge(m2ic_waitrequest);
             input2im_write <= '0';
-            wait for clk_period;
         END LOOP;
 
         WAIT UNTIL falling_edge(clk); -- the last datum can be used first
@@ -308,7 +304,7 @@ BEGIN
         im_write<=ic2m_write;
         im_writedata<=ic2m_writedata;
 
-        dm_read<= dc2m_read;
+        dm_read<= m2dc_read;
         m2dc_readdata<= dm_readdata;
         rst_processor <= '0';
         wait for clk_period*10000;
@@ -322,10 +318,8 @@ BEGIN
 
         dm_read<= input2dm_read;
         m2dc_readdata<= (others=> '0');
-        
         FOR I IN 0 TO 31 LOOP
-            write(v_OLINE, register_sigs(I), right, c_WIDTH);
-            writeline(file_registers, v_OLINE);
+            write(v_OLINE, register_sigs(I), right, c_WID)
         END LOOP;
 
         rst_processor <= '1';
