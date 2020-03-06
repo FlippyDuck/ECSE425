@@ -8,37 +8,37 @@ z2
 !i10f 100
 cModel Technology
 Z0 dC:/Users/murra/Documents/ECSE425/Project 4
-Eprocessor
-Z1 w1583353843
+Ecache
+Z1 w1582746825
 Z2 DPx4 ieee 11 numeric_std 0 22 :ASDNFgHXf_ih3J@9F3Ze1
 Z3 DPx3 std 6 textio 0 22 zE1`LPoLg^DX3Oz^4Fj1K3
 Z4 DPx4 ieee 14 std_logic_1164 0 22 eNV`TJ_GofJTzYa?f<@Oe1
 R0
-Z5 8processor.vhd
-Z6 Fprocessor.vhd
+Z5 8cache.vhd
+Z6 Fcache.vhd
 l0
 L5
-VhDh<<JJXff5mCH:l^:D2G2
-!s100 `acLYh?URLA_[AAS2O6HW1
+VV>=c54h;I[cJ2[`RXg6a<0
+!s100 aAT4SH5jC`OUUQ@S6Pf^32
 Z7 OP;C;10.4a;61
 32
-Z8 !s110 1583353845
+Z8 !s110 1583522463
 !i10b 1
-Z9 !s108 1583353845.000000
-Z10 !s90 -reportprogress|300|processor.vhd|
-Z11 !s107 processor.vhd|
+Z9 !s108 1583522463.000000
+Z10 !s90 -reportprogress|300|cache.vhd|
+Z11 !s107 cache.vhd|
 !i113 1
 o-O0
 Z12 tExplicit 1
-Aproc_arch
+Aarch
 R2
 R3
 R4
-Z13 DEx4 work 9 processor 0 22 hDh<<JJXff5mCH:l^:D2G2
-l81
-L24
-VTML[WQeSX8?UZI7PjJoj<3
-!s100 Q4CNZCUVb^YL:mEYIiWdV3
+DEx4 work 5 cache 0 22 V>=c54h;I[cJ2[`RXg6a<0
+l45
+L30
+VNGKReJEDC;UE27SUzc_dZ3
+!s100 VBmOC3FJmiF`eHo[VzeRS0
 R7
 32
 R8
@@ -46,6 +46,180 @@ R8
 R9
 R10
 R11
+!i113 1
+o-O0
+R12
+Ememory
+Z13 w1582747324
+R2
+R3
+R4
+R0
+Z14 8memory.vhd
+Z15 Fmemory.vhd
+l0
+L6
+V`jFEc]cT[GXAlUe:b5^>o0
+!s100 TL`MNK5NTn0=f?i`Ph2JS3
+R7
+32
+Z16 !s110 1583522464
+!i10b 1
+R9
+Z17 !s90 -reportprogress|300|memory.vhd|
+Z18 !s107 memory.vhd|
+!i113 1
+o-O0
+R12
+Artl
+R2
+R3
+R4
+DEx4 work 6 memory 0 22 `jFEc]cT[GXAlUe:b5^>o0
+l29
+L23
+VUOlgW`Pe;;a]Bb6J4gnVl3
+!s100 eO4GG9KB^]m;m]0ioXWlk2
+R7
+32
+R16
+!i10b 1
+R9
+R17
+R18
+!i113 1
+o-O0
+R12
+Ppkg
+R2
+R3
+R4
+w1583519158
+R0
+Z19 8processor.vhd
+Z20 Fprocessor.vhd
+l0
+L5
+V6Gc=4740DS5SmKXK^nP:53
+!s100 oV7VFAbfbgQJ?K]Id3m<a0
+R7
+32
+!s110 1583519160
+!i10b 1
+!s108 1583519160.000000
+Z21 !s90 -reportprogress|300|processor.vhd|
+Z22 !s107 processor.vhd|
+!i113 1
+o-O0
+R12
+Eprocessor
+Z23 w1583521535
+Z24 DPx4 work 12 register_pkg 0 22 [G18DNeE2a`DjjdWNI2Xg0
+R2
+R3
+R4
+R0
+R19
+R20
+l0
+L14
+V8HGS>V^c`4hbiWdH]X:QR1
+!s100 >zBBNzL2nX`^hf@QHG93Q3
+R7
+32
+R16
+!i10b 1
+Z25 !s108 1583522464.000000
+R21
+R22
+!i113 1
+o-O0
+R12
+Aproc_arch
+R24
+R2
+R3
+R4
+DEx4 work 9 processor 0 22 8HGS>V^c`4hbiWdH]X:QR1
+l96
+L35
+V5DoJ<Fz>dc@[jm1dHdS]I3
+!s100 2<lPd4oX7`eXl>1EFAQ6D3
+R7
+32
+R16
+!i10b 1
+R25
+R21
+R22
+!i113 1
+o-O0
+R12
+Eprocessor_tb
+w1583522457
+R24
+Z26 DPx4 ieee 16 std_logic_textio 0 22 V5TSK`;aJKC<l]CEg1>mz1
+R2
+R3
+R4
+R0
+Z27 8processor_tb.vhd
+Z28 Fprocessor_tb.vhd
+l0
+L8
+VzY1zfffoeF]1Fa8:WoA]63
+!s100 P5nKoY[zNlV8VE5oV^J>M0
+R7
+32
+R16
+!i10b 1
+R25
+Z29 !s90 -reportprogress|300|processor_tb.vhd|
+!s107 processor_tb.vhd|
+!i113 1
+o-O0
+R12
+Abehavior
+R24
+R26
+R2
+R3
+R4
+DEx4 work 12 processor_tb 0 22 zY1zfffoeF]1Fa8:WoA]63
+l118
+L11
+Vc1[PgQ6i3g1=e:BMGR=k_1
+!s100 l<9KYIIIE6FD>H>:BX_7j1
+R7
+32
+!s110 1583521743
+!i10b 1
+!s108 1583521743.000000
+R29
+!s107 processor_tb.vhd|
+!i113 1
+o-O0
+R12
+w1583521739
+Pregister_pkg
+R2
+R3
+R4
+R23
+R0
+R19
+R20
+l0
+L5
+V[G18DNeE2a`DjjdWNI2Xg0
+!s100 4z?ebKDlT>VXf4B]oDZE90
+R7
+32
+R16
+!i10b 1
+R25
+R21
+R22
 !i113 1
 o-O0
 R12

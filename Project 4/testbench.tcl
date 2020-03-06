@@ -1,20 +1,31 @@
 proc AddWaves {} {
 	;#Add waves we're interested in to the Wave window
-    add wave -position end sim:/cache_tb/clk
-    add wave -position end sim:/cache_tb/reset
-    add wave -position end sim:/cache_tb/s_addr
-    add wave -position end sim:/cache_tb/s_read
-    add wave -position end sim:/cache_tb/s_readdata
-    add wave -position end sim:/cache_tb/s_write
-    add wave -position end sim:/cache_tb/s_writedata
-    add wave -position end sim:/cache_tb/s_waitrequest
-    add wave -position end sim:/cache_tb/m_addr
-    add wave -position end sim:/cache_tb/m_read
-    add wave -position end sim:/cache_tb/m_readdata
-    add wave -position end sim:/cache_tb/m_write
-    add wave -position end sim:/cache_tb/m_writedata
-    add wave -position end sim:/cache_tb/m_waitrequest
-    add wave -position end sim:/cache_tb/dut/state
+    add wave -position end sim:/processor_tb/rst_processor
+    add wave -position end sim:/processor_tb/rst_cache
+    add wave -position end sim:/processor_tb/clk
+    add wave -position end sim:/processor_tb/p2ic_addr
+    add wave -position end sim:/processor_tb/p2ic_read
+    add wave -position end sim:/processor_tb/ic2p_readdata
+    add wave -position end sim:/processor_tb/ic2p_waitrequest
+    add wave -position end sim:/processor_tb/p2dc_addr
+    add wave -position end sim:/processor_tb/p2dc_read
+    add wave -position end sim:/processor_tb/dc2p_readdata
+    add wave -position end sim:/processor_tb/p2dc_write
+    add wave -position end sim:/processor_tb/p2dc_writedata
+    add wave -position end sim:/processor_tb/dc2p_waitrequest
+    add wave -position end sim:/processor_tb/ic2m_addr
+    add wave -position end sim:/processor_tb/ic2m_read
+    add wave -position end sim:/processor_tb/m2ic_readdata
+    add wave -position end sim:/processor_tb/ic2m_write
+    add wave -position end sim:/processor_tb/ic2m_writedata
+    add wave -position end sim:/processor_tb/m2ic_waitrequest
+    add wave -position end sim:/processor_tb/dc2m_addr
+    add wave -position end sim:/processor_tb/dc2m_read
+    add wave -position end sim:/processor_tb/m2dc_readdata
+    add wave -position end sim:/processor_tb/dc2m_write
+    add wave -position end sim:/processor_tb/dc2m_writedata
+    add wave -position end sim:/processor_tb/m2dc_waitrequest
+    add wave -position end sim:/processor_tb/dut/register_bank
 }
 
 vlib work
@@ -22,10 +33,11 @@ vlib work
 ;# Compile components if any
 vcom cache.vhd
 vcom memory.vhd
-vcom cache_tb.vhd
+vcom processor.vhd
+vcom processor_tb.vhd
 
 ;# Start simulation
-vsim -t 1ps cache_tb
+vsim -t 1ps processor_tb
 
 ;# Generate a clock with 1ns period
 force -deposit clk 0 0 ns, 1 0.5 ns -repeat 1 ns
@@ -34,4 +46,4 @@ force -deposit clk 0 0 ns, 1 0.5 ns -repeat 1 ns
 AddWaves
 
 ;# Run for 50 ns
-run 3000ns
+run 10000ns
