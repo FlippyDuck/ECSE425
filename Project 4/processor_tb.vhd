@@ -237,8 +237,9 @@ BEGIN
         Variable outputline : std_logic_vector (31 downto 0);
     BEGIN
         wait for clk_period;
-        imem_addr<=input2im_addr;
-        dmem_addr<=input2dm_addr;
+        
+        --imem_addr<=input2im_addr;
+        --dmem_addr<=input2dm_addr;
 
         --im_write<=input2im_write;
         --im_writedata<=input2im_writedata;
@@ -264,7 +265,8 @@ BEGIN
             readline (file_pointer, line_input);
             REPORT line_input.all;
             read (line_input, line_content);
-            input2im_addr <= line_number*4;
+            imem_addr <= line_number*4;
+            --input2im_addr <= line_number*4;
             im_writedata <= line_content (7 downto 0);
             --input2im_writedata <= line_content (7 downto 0);
             im_write<='1';
@@ -276,7 +278,8 @@ BEGIN
             REPORT " here1 ";
 
             wait for clk_period;
-            input2im_addr <= line_number*4+1;
+            imem_addr <= line_number*4+1;
+            --input2im_addr <= line_number*4+1;
             im_writedata <= line_content (15 downto 8);
             --input2im_writedata <= line_content (15 downto 8);
             im_write<='1';
@@ -287,7 +290,8 @@ BEGIN
             --input2im_write <= '0';
 
             wait for clk_period;
-            input2im_addr <= line_number*4+2;
+            imem_addr <= line_number*4+2;
+            --input2im_addr <= line_number*4+2;
             im_writedata <= line_content (23 downto 16);
             --input2im_writedata <= line_content (23 downto 16);
             im_write<='1';
@@ -298,7 +302,8 @@ BEGIN
             --input2im_write <= '0';
 
             wait for clk_period;
-            input2im_addr <= line_number*4+3;
+            imem_addr <= line_number*4+3;
+            --input2im_addr <= line_number*4+3;
             im_writedata <= line_content (31 downto 24);
             --input2im_writedata <= line_content (31 downto 24);
             im_write<='1';
@@ -308,6 +313,7 @@ BEGIN
             im_write<='0';
             --input2im_write <= '0';
             wait for clk_period;
+            line_number:= line_number + 1;
         END LOOP;
 
         WAIT UNTIL falling_edge(clk); -- the last datum can be used first
@@ -326,11 +332,23 @@ BEGIN
         REPORT "Begin Execution";
         rst_processor <= '0';
         rst_cache <= '0';
-        wait for clk_period*10000;
+        --wait for clk_period*10000;
+        for I in 0 to 10000 loop
+            imem_addr<=ic2m_addr;
+            dmem_addr<=dc2m_addr;
+
+            im_write<=ic2m_write;
+            im_writedata<=ic2m_writedata;
+
+            dm_read<= dc2m_read;
+            m2dc_readdata<= dm_readdata;
+            wait until rising_edge(clk);
+        end loop;
+
         REPORT "End Execution";
         --output
-        imem_addr<=input2im_addr;
-        dmem_addr<=input2dm_addr;
+        --imem_addr<=input2im_addr;
+        --dmem_addr<=input2dm_addr;
 
         im_write<=input2im_write;
         im_writedata<=input2im_writedata;

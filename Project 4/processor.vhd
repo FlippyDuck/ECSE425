@@ -522,7 +522,7 @@ BEGIN
                     register_bank(i) <= (others => '0');
                 END LOOP;
             ELSIF (writeback_stall='0') then
-                if (mem_wb_isWriteback='0') then
+                if (mem_wb_isWriteback='1') then
                     register_bank(mem_wb_writeback_index)<=mem_wb_writeback;
                 end if;
             end if;

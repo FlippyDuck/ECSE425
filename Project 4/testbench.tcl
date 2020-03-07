@@ -30,6 +30,7 @@ proc AddWaves {} {
     add wave -position end sim:/processor_tb/im_writedata
     add wave -position end sim:/processor_tb/dm_read
     add wave -position end sim:/processor_tb/dm_readdata
+    add wave -position end sim:/processor_tb/imem_addr
 }
 
 vlib work
