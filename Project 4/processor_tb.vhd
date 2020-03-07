@@ -242,7 +242,7 @@ BEGIN
     END PROCESS;
 
     test_process : PROCESS
-        CONSTANT filename : STRING := "Assembler/Assembler/program.txt"; -- use more than once
+        CONSTANT filename : STRING := "Assembler/program.txt"; -- use more than once
 
         FILE file_pointer : text;
         FILE file_memory : text;
@@ -289,6 +289,7 @@ BEGIN
             imem_initializer(line_number + 1) <= line_vector(15 DOWNTO 8);
             imem_initializer(line_number + 2) <= line_vector(23 DOWNTO 16);
             imem_initializer(line_number + 3) <= line_vector(31 DOWNTO 24);
+            line_number := line_number + 1;
             -- WAIT UNTIL falling_edge(clk); -- once per clock
             -- readline (file_pointer, line_input);
             -- REPORT line_input.ALL;
@@ -348,6 +349,14 @@ BEGIN
         -- imem_writedata <= input2im_writedata;
 
         -- dm_read <= input2dm_read;
+
+        WAIT FOR clk_period * 2;
+        rst_processor <= '1';
+        WAIT FOR clk_period;
+        rst_processor <= '0';
+
+        WAIT FOR clk_period * 10000;
+
         FOR i IN 0 TO 31 LOOP
             write(out_line, register_sigs(i));
             writeline(file_registers, out_line);
@@ -405,7 +414,7 @@ BEGIN
         file_close(file_memory);
         file_close(file_registers);
         REPORT "output_results.txt closed.";
-
+        WAIT;
     END PROCESS;
 
 END;

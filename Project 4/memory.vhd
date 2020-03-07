@@ -46,7 +46,7 @@ BEGIN
 		IF(now < 1 ps)THEN
 			For i in 0 to ram_size-1 LOOP
 				-- ram_block(i) <= std_logic_vector(to_unsigned(i mod 256,8));
-				ram_block <= meminitializer;
+				ram_block(i) <= meminitializer(i);
 			END LOOP;
 		end if;
 
