@@ -52,7 +52,7 @@ ARCHITECTURE proc_arch OF processor IS
     SIGNAL count: Integer Range 0 to 4;
     --for fetching
     SIGNAL program_counter : std_logic_vector(31 DOWNTO 0);
-    SIGNAL instruction_register : std_logic_vector(31 DOWNTO 0);
+    --SIGNAL instruction_register : std_logic_vector(31 DOWNTO 0);
 
     SIGNAL fetch_complete : std_logic := '0';
     SIGNAL fetch_state : t_fetch_state := IDLE;
@@ -104,7 +104,8 @@ BEGIN
         IF (rising_edge(clock)) THEN
             IF (reset = '1') THEN
                 program_counter <= (OTHERS => '0');
-                instruction_register <= (OTHERS => '0');
+                if_id_instruction <= (OTHERS => '0');
+                --instruction_register <= (OTHERS => '0');
                 fetch_state<=IDLE;
                 fetch_complete<='0';
                 inst_read<='0';
@@ -164,32 +165,32 @@ BEGIN
             elsif (fetch_complete = '1' AND fetch_stall = '0') then
                 id_ex_pc <= if_id_programcounter;
                 
-                id_ex_opcode<=instruction_register(31 downto 26);
-                id_ex_register_s<=register_bank(to_integer(unsigned(instruction_register(25 downto 21))));
-                id_ex_register_t_index<=to_integer(unsigned(instruction_register(20 downto 16)));
-                id_ex_register_t<=register_bank(to_integer(unsigned(instruction_register(20 downto 16))));
-                id_ex_register_d_index<=to_integer(unsigned(instruction_register(15 downto 11)));
+                id_ex_opcode<=if_id_instruction(31 downto 26);
+                id_ex_register_s<=register_bank(to_integer(unsigned(if_id_instruction(25 downto 21))));
+                id_ex_register_t_index<=to_integer(unsigned(if_id_instruction(20 downto 16)));
+                id_ex_register_t<=register_bank(to_integer(unsigned(if_id_instruction(20 downto 16))));
+                id_ex_register_d_index<=to_integer(unsigned(if_id_instruction(15 downto 11)));
 
-                id_ex_shamt<=instruction_register(10 downto 6);
-                id_ex_funct<=instruction_register(5 downto 0);
+                id_ex_shamt<=if_id_instruction(10 downto 6);
+                id_ex_funct<=if_id_instruction(5 downto 0);
 
-                id_ex_immediate_zero<= "0000000000000000" & instruction_register(15 downto 0);
+                id_ex_immediate_zero<= "0000000000000000" & if_id_instruction(15 downto 0);
                 -- id_ex_immediate_sign<=instruction_register(15 downto 0) & instruction_register(15);
-                id_ex_immediate_sign <= (others => instruction_register(15));
-                id_ex_immediate_sign(15 DOWNTO 0) <= instruction_register(15 DOWNTO 0);
-                id_ex_jaddress<=instruction_register(25 downto 0);
+                id_ex_immediate_sign <= (others => if_id_instruction(15));
+                id_ex_immediate_sign(15 DOWNTO 0) <= if_id_instruction(15 DOWNTO 0);
+                id_ex_jaddress<=if_id_instruction(25 downto 0);
                 
                 --forwarding
-                if(to_integer(unsigned(instruction_register(25 downto 21)))=id_regwriteback_ex) then
+                if(to_integer(unsigned(if_id_instruction(25 downto 21)))=id_regwriteback_ex) then
                     id_ex_forwardex<="01";
-                elsif (to_integer(unsigned(instruction_register(20 downto 16)))=id_regwriteback_ex) then
+                elsif (to_integer(unsigned(if_id_instruction(20 downto 16)))=id_regwriteback_ex) then
                     id_ex_forwardex<="11";
                 else
                     id_ex_forwardex<="00";
                 end if;
 
                 id_regwriteback_mem:=id_regwriteback_ex;
-                id_regwriteback_ex:=to_integer(unsigned(instruction_register(15 downto 11)));
+                id_regwriteback_ex:=to_integer(unsigned(if_id_instruction(15 downto 11)));
             
             else        --insert no op 
                 id_ex_pc<=program_counter;
