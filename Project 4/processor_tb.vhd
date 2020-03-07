@@ -240,14 +240,15 @@ BEGIN
         imem_addr<=input2im_addr;
         dmem_addr<=input2dm_addr;
 
-        im_write<=input2im_write;
-        im_writedata<=input2im_writedata;
+        --im_write<=input2im_write;
+        --im_writedata<=input2im_writedata;
 
-        dm_read<= input2dm_read;
+        dm_read<= '0';
         m2dc_readdata<= (others=> '0');
         --dm_readdata<=input2dm_readdata;
 
         rst_processor <= '1';
+        rst_cache <= '1';
         line_number :=0;
         --read from binary into and place into in cache
         file_open (filestatus, file_pointer, filename, READ_MODE);
@@ -264,36 +265,48 @@ BEGIN
             REPORT line_input.all;
             read (line_input, line_content);
             input2im_addr <= line_number*4;
-            input2im_writedata <= line_content (7 downto 0);
-            input2im_write <= '1';
+            im_writedata <= line_content (7 downto 0);
+            --input2im_writedata <= line_content (7 downto 0);
+            im_write<='1';
+            --input2im_write <= '1';
             
             wait until rising_edge(m2ic_waitrequest);
-            ic2m_write <= '0';
+            im_write<='0';
+            --ic2m_write <= '0';
             REPORT " here1 ";
 
             wait for clk_period;
             input2im_addr <= line_number*4+1;
-            input2im_writedata <= line_content (15 downto 8);
-            input2im_write <= '1';
+            im_writedata <= line_content (15 downto 8);
+            --input2im_writedata <= line_content (15 downto 8);
+            im_write<='1';
+            --input2im_write <= '1';
 
             wait until rising_edge(m2ic_waitrequest);
-            input2im_write <= '0';
+            im_write<='0';
+            --input2im_write <= '0';
 
             wait for clk_period;
             input2im_addr <= line_number*4+2;
-            input2im_writedata <= line_content (23 downto 16);
-            input2im_write <= '1';
+            im_writedata <= line_content (23 downto 16);
+            --input2im_writedata <= line_content (23 downto 16);
+            im_write<='1';
+            --input2im_write <= '1';
 
             wait until rising_edge(m2ic_waitrequest);
-            input2im_write <= '0';
+            im_write<='0';
+            --input2im_write <= '0';
 
             wait for clk_period;
             input2im_addr <= line_number*4+3;
-            input2im_writedata <= line_content (31 downto 24);
-            input2im_write <= '1';
+            im_writedata <= line_content (31 downto 24);
+            --input2im_writedata <= line_content (31 downto 24);
+            im_write<='1';
+            --input2im_write <= '1';
 
             wait until rising_edge(m2ic_waitrequest);
-            input2im_write <= '0';
+            im_write<='0';
+            --input2im_write <= '0';
             wait for clk_period;
         END LOOP;
 
@@ -310,9 +323,11 @@ BEGIN
 
         dm_read<= dc2m_read;
         m2dc_readdata<= dm_readdata;
+        REPORT "Begin Execution";
         rst_processor <= '0';
+        rst_cache <= '0';
         wait for clk_period*10000;
-
+        REPORT "End Execution";
         --output
         imem_addr<=input2im_addr;
         dmem_addr<=input2dm_addr;
@@ -320,7 +335,8 @@ BEGIN
         im_write<=input2im_write;
         im_writedata<=input2im_writedata;
 
-        dm_read<= input2dm_read;
+        dm_read<='0';
+        --dm_read<= input2dm_read;
         m2dc_readdata<= (others=> '0');
         
         FOR I IN 0 TO 31 LOOP
@@ -329,38 +345,47 @@ BEGIN
         END LOOP;
 
         rst_processor <= '1';
+        
         for I in 0 to 4095 loop
             WAIT UNTIL falling_edge(clk); -- once per clock
             dmem_addr <= I*4;
-            dc2m_read <= '1';
+            dm_read <='1';
+            --dc2m_read <= '1';
             
             wait until rising_edge(m2dc_waitrequest);
             outputline (7 downto 0) := dm_readdata;
-            input2dm_read <= '0';
+            dm_read <='0';
+            --input2dm_read <= '0';
 
             wait for clk_period;
             dmem_addr <= I*4+1;
-            input2dm_read <= '1';
+            dm_read <='1';
+            --input2dm_read <= '1';
 
             wait until rising_edge(m2dc_waitrequest);
             outputline (15 downto 8) := dm_readdata;
-            input2dm_read <= '0';
+            dm_read <='0';
+            --input2dm_read <= '0';
 
             wait for clk_period;
             dmem_addr <= I*4+2;
-            input2dm_read <= '1';
+            dm_read <='1';
+            --input2dm_read <= '1';
 
             wait until rising_edge(m2dc_waitrequest);
             outputline (23 downto 16) := dm_readdata;
-            input2dm_read <= '0';
+            dm_read <='0';
+            --input2dm_read <= '0';
 
             wait for clk_period;
             dmem_addr <= I*4+3;
-            input2dm_read <= '1';
+            dm_read <='1';
+            --input2dm_read <= '1';
 
             wait until rising_edge(m2dc_waitrequest);
             outputline (31 downto 24) := dm_readdata;
-            input2dm_read <= '0';
+            dm_read <='0';
+            --input2dm_read <= '0';
 
             write(v_OLINE, outputline, right, c_WIDTH);
             writeline(file_RESULTS, v_OLINE);
@@ -369,8 +394,8 @@ BEGIN
         WAIT UNTIL falling_edge(clk); 
         file_close (file_RESULTS);
         file_close(file_registers);
-        REPORT "output_results.txt closed.";
-
+        REPORT "memory.txt closed.";
+        wait;
     END PROCESS;
 
 END;

@@ -26,6 +26,10 @@ proc AddWaves {} {
     add wave -position end sim:/processor_tb/dc2m_writedata
     add wave -position end sim:/processor_tb/m2dc_waitrequest
     add wave -position end sim:/processor_tb/dut/register_bank
+    add wave -position end sim:/processor_tb/im_write
+    add wave -position end sim:/processor_tb/im_writedata
+    add wave -position end sim:/processor_tb/dm_read
+    add wave -position end sim:/processor_tb/dm_readdata
 }
 
 vlib work
@@ -45,5 +49,5 @@ force -deposit clk 0 0 ns, 1 0.5 ns -repeat 1 ns
 ;# Add the waves
 AddWaves
 
-;# Run for 10000 ns
-run 10000ns
+;# Run for 100000 ns
+run 100000ns
