@@ -71,6 +71,7 @@ ARCHITECTURE behavior OF processor_tb IS
             readdata : OUT STD_LOGIC_VECTOR (7 DOWNTO 0);
             waitrequest : OUT STD_LOGIC;
 
+            meminit: IN std_logic;
             meminitializer : IN MEM (ram_size - 1 DOWNTO 0);
             memout : OUT MEM (ram_size - 1 DOWNTO 0)
         );
@@ -108,6 +109,7 @@ ARCHITECTURE behavior OF processor_tb IS
     SIGNAL ic2m_writedata : std_logic_vector (7 DOWNTO 0);
     SIGNAL m2ic_waitrequest : std_logic;
 
+    SIGNAL imem_init : std_logic;
     SIGNAL imem_initializer : MEM (ram_size - 1 DOWNTO 0);
     SIGNAL imem_out : MEM (ram_size - 1 DOWNTO 0);
 
@@ -119,6 +121,7 @@ ARCHITECTURE behavior OF processor_tb IS
     SIGNAL dc2m_writedata : std_logic_vector (7 DOWNTO 0);
     SIGNAL m2dc_waitrequest : std_logic;
 
+    SIGNAL dmem_init : std_logic;
     SIGNAL dmem_initializer : MEM (ram_size - 1 DOWNTO 0);
     SIGNAL dmem_out : MEM (ram_size - 1 DOWNTO 0);
 
@@ -194,6 +197,7 @@ BEGIN
         readdata => m2ic_readdata,
         waitrequest => m2ic_waitrequest,
 
+        meminit => imem_init,
         meminitializer => imem_initializer,
         memout => imem_out
     );
@@ -229,6 +233,7 @@ BEGIN
         readdata => m2dc_readdata,
         waitrequest => m2dc_waitrequest,
 
+        meminit => dmem_init,
         meminitializer => dmem_initializer,
         memout => dmem_out
     );
@@ -275,10 +280,6 @@ BEGIN
         REPORT filename & LF & HT & "file_open_status = " & file_open_status'image(filestatus);
         ASSERT filestatus = OPEN_OK REPORT "file_open_status /= file_ok" SEVERITY FAILURE; -- end simulation
 
-        FOR i IN 0 TO 32767 LOOP
-            dmem_initializer(i) <= (others => '0');
-        END LOOP;
-
         line_number := 0;
         WHILE NOT ENDFILE (file_pointer) LOOP
             readline(file_pointer, line_input);
@@ -289,7 +290,7 @@ BEGIN
             imem_initializer(line_number + 1) <= line_vector(15 DOWNTO 8);
             imem_initializer(line_number + 2) <= line_vector(23 DOWNTO 16);
             imem_initializer(line_number + 3) <= line_vector(31 DOWNTO 24);
-            line_number := line_number + 1;
+            line_number := line_number + 4;
             -- WAIT UNTIL falling_edge(clk); -- once per clock
             -- readline (file_pointer, line_input);
             -- REPORT line_input.ALL;
@@ -326,6 +327,22 @@ BEGIN
             -- input2im_write <= '0';
         END LOOP;
 
+        FOR i IN line_number to ram_size - 1 LOOP
+            imem_initializer(i) <= (others => '0');
+        END LOOP;
+
+        FOR i IN 0 TO ram_size - 1 LOOP 
+            dmem_initializer(i) <= std_logic_vector(to_unsigned(i mod 256, 8));
+        END LOOP;
+
+        imem_init <= '1';
+        dmem_init <= '1';
+
+        WAIT FOR clk_period;
+
+        imem_init <= '0';
+        dmem_init <= '0';
+        
         WAIT UNTIL falling_edge(clk); -- the last datum can be used first
         file_close (file_pointer);
         REPORT filename & " closed.";

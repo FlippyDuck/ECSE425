@@ -26,9 +26,8 @@ proc AddWaves {} {
     add wave -position end sim:/processor_tb/dc2m_writedata
     add wave -position end sim:/processor_tb/m2dc_waitrequest
     add wave -position end sim:/processor_tb/dut/register_bank
-    add wave -position end sim:/processor_tb/imem_initializer
     add wave -position end sim:/processor_tb/imem_out
-    
+    add wave -position end sim:/processor_tb/dmem_out
 }
 
 vlib work

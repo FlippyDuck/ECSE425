@@ -27,6 +27,7 @@ ENTITY memory IS
 		readdata: OUT STD_LOGIC_VECTOR (7 DOWNTO 0);
 		waitrequest: OUT STD_LOGIC;
 
+		meminit: IN std_logic;
 		meminitializer: IN MEM (ram_size - 1 DOWNTO 0);
 		memout: OUT MEM (ram_size - 1 DOWNTO 0)
 	);
@@ -43,11 +44,13 @@ BEGIN
 	mem_process: PROCESS (clock)
 	BEGIN
 		--This is a cheap trick to initialize the SRAM in simulation
-		IF(now < 1 ps)THEN
-			For i in 0 to ram_size-1 LOOP
+		IF (meminit = '1') THEN
+			ram_block <= meminitializer;
+			REPORT "memory initialized";
+			-- For i in 0 to ram_size-1 LOOP
 				-- ram_block(i) <= std_logic_vector(to_unsigned(i mod 256,8));
-				ram_block(i) <= meminitializer(i);
-			END LOOP;
+				-- ram_block(i) <= meminitializer(i);
+			-- END LOOP;
 		end if;
 
 		--This is the actual synthesizable SRAM block
