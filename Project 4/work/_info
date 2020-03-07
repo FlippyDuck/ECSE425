@@ -7,29 +7,29 @@ z2
 !i10e 25
 !i10f 100
 cModel Technology
-Z0 dC:/Users/murra/Documents/ECSE425/Project 4
+Z0 dC:/Users/Murray Kornelsen/Documents/ECSE425/Project 4
 Ecache
 Z1 w1583087901
 Z2 DPx4 ieee 11 numeric_std 0 22 :ASDNFgHXf_ih3J@9F3Ze1
 Z3 DPx3 std 6 textio 0 22 zE1`LPoLg^DX3Oz^4Fj1K3
 Z4 DPx4 ieee 14 std_logic_1164 0 22 eNV`TJ_GofJTzYa?f<@Oe1
-Z5 dC:/Users/Murray Kornelsen/Documents/ECSE425/Project 4
-Z6 8cache.vhd
-Z7 Fcache.vhd
+R0
+Z5 8cache.vhd
+Z6 Fcache.vhd
 l0
 L5
 VV>=c54h;I[cJ2[`RXg6a<0
 !s100 aAT4SH5jC`OUUQ@S6Pf^32
-Z8 OP;C;10.4a;61
+Z7 OP;C;10.4a;61
 32
-Z9 !s110 1583540962
+Z8 !s110 1583541888
 !i10b 1
-Z10 !s108 1583540962.000000
-Z11 !s90 -reportprogress|300|cache.vhd|
-Z12 !s107 cache.vhd|
+Z9 !s108 1583541887.000000
+Z10 !s90 -reportprogress|300|cache.vhd|
+Z11 !s107 cache.vhd|
 !i113 1
 o-O0
-Z13 tExplicit 1
+Z12 tExplicit 1
 Aarch
 R2
 R3
@@ -39,61 +39,61 @@ l45
 L30
 VNGKReJEDC;UE27SUzc_dZ3
 !s100 VBmOC3FJmiF`eHo[VzeRS0
-R8
+R7
 32
-R9
+R8
 !i10b 1
+R9
 R10
 R11
-R12
 !i113 1
 o-O0
-R13
+R12
 Pmem_pkg
 R2
 R3
 R4
-Z14 w1583540614
-R5
-Z15 8memory.vhd
-Z16 Fmemory.vhd
+Z13 w1583540614
+R0
+Z14 8memory.vhd
+Z15 Fmemory.vhd
 l0
 L6
 V`ihoc`3ahca=i6A0YoNTX0
 !s100 2I2A_QYX^eQGfGkB[@mU90
-R8
+R7
 32
-R9
+R8
 !i10b 1
-R10
+Z16 !s108 1583541888.000000
 Z17 !s90 -reportprogress|300|memory.vhd|
 Z18 !s107 memory.vhd|
 !i113 1
 o-O0
-R13
+R12
 Ememory
-R14
+R13
 Z19 DPx4 work 7 mem_pkg 0 22 `ihoc`3ahca=i6A0YoNTX0
 R2
 R3
 R4
-R5
+R0
+R14
 R15
-R16
 l0
 L15
 VPdKHzHX0>_^P:KOAM@c3m1
 !s100 LIQDPLUN[?J:a7aKEK7F21
-R8
+R7
 32
-R9
+R8
 !i10b 1
-R10
+R16
 R17
 R18
 !i113 1
 o-O0
-R13
+R12
 Artl
 R19
 R2
@@ -104,63 +104,41 @@ l40
 L35
 VRA1@h72U3E:1k3iT5c6e72
 !s100 QF21o:Czm?>g`IJhW[obk2
-R8
+R7
 32
-R9
+R8
 !i10b 1
-R10
+R16
 R17
 R18
 !i113 1
 o-O0
-R13
-Ppkg
-R2
-R3
-R4
-w1583519158
-R0
-Z20 8processor.vhd
-Z21 Fprocessor.vhd
-l0
-L5
-V6Gc=4740DS5SmKXK^nP:53
-!s100 oV7VFAbfbgQJ?K]Id3m<a0
-R8
-32
-!s110 1583519160
-!i10b 1
-!s108 1583519160.000000
-Z22 !s90 -reportprogress|300|processor.vhd|
-Z23 !s107 processor.vhd|
-!i113 1
-o-O0
-R13
+R12
 Eprocessor
-Z24 w1583524119
-Z25 DPx4 work 12 register_pkg 0 22 [G18DNeE2a`DjjdWNI2Xg0
+Z20 w1583524119
+Z21 DPx4 work 12 register_pkg 0 22 [G18DNeE2a`DjjdWNI2Xg0
 R2
 R3
 R4
-R5
-R20
-R21
+R0
+Z22 8processor.vhd
+Z23 Fprocessor.vhd
 l0
 L14
 V8HGS>V^c`4hbiWdH]X:QR1
 !s100 >zBBNzL2nX`^hf@QHG93Q3
-R8
+R7
 32
-R9
+R8
 !i10b 1
-R10
-R22
-R23
+R16
+Z24 !s90 -reportprogress|300|processor.vhd|
+Z25 !s107 processor.vhd|
 !i113 1
 o-O0
-R13
+R12
 Aproc_arch
-R25
+R21
 R2
 R3
 R4
@@ -169,44 +147,44 @@ l96
 L35
 V5DoJ<Fz>dc@[jm1dHdS]I3
 !s100 2<lPd4oX7`eXl>1EFAQ6D3
-R8
+R7
 32
-R9
+R8
 !i10b 1
-R10
-R22
-R23
+R16
+R24
+R25
 !i113 1
 o-O0
-R13
+R12
 Eprocessor_tb
-Z26 w1583540959
+Z26 w1583541737
 R19
-R25
+R21
 Z27 DPx4 ieee 16 std_logic_textio 0 22 V5TSK`;aJKC<l]CEg1>mz1
 R2
 R3
 R4
-R5
+R0
 Z28 8processor_tb.vhd
 Z29 Fprocessor_tb.vhd
 l0
 L9
 VD5khBEDBX8R<cEoQMXJng1
 !s100 8:KE01Vc1BbONS?B;oBU30
-R8
+R7
 32
-R9
+R8
 !i10b 1
-R10
+R16
 Z30 !s90 -reportprogress|300|processor_tb.vhd|
 Z31 !s107 processor_tb.vhd|
 !i113 1
 o-O0
-R13
+R12
 Abehavior
 R19
-R25
+R21
 R27
 R2
 R3
@@ -216,35 +194,35 @@ l144
 L12
 VXa@[=lS2n36>bP:S>QbeI1
 !s100 beLL]e3F2J3?`oOYcY]HE1
-R8
+R7
 32
-R9
+R8
 !i10b 1
-R10
+R16
 R30
 R31
 !i113 1
 o-O0
-R13
+R12
 Pregister_pkg
 R2
 R3
 R4
-R24
-R5
 R20
-R21
+R0
+R22
+R23
 l0
 L5
 V[G18DNeE2a`DjjdWNI2Xg0
 !s100 4z?ebKDlT>VXf4B]oDZE90
-R8
+R7
 32
-R9
+R8
 !i10b 1
-R10
-R22
-R23
+R16
+R24
+R25
 !i113 1
 o-O0
-R13
+R12

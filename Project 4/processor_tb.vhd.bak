@@ -1,0 +1,370 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.numeric_std.ALL;
+USE std.textio.ALL;
+USE ieee.std_logic_textio.ALL;
+USE work.register_pkg.ALL;
+
+ENTITY processor_tb IS
+END processor_tb;
+
+ARCHITECTURE behavior OF processor_tb IS
+    COMPONENT processor IS
+        PORT (
+            clock : IN std_logic;
+            reset : IN std_logic;
+
+            inst_addr : OUT std_logic_vector(31 DOWNTO 0);
+            inst_read : OUT std_logic;
+            inst_readdata : IN std_logic_vector(31 DOWNTO 0);
+            inst_waitrequest : IN std_logic;
+
+            data_addr : OUT std_logic_vector(31 DOWNTO 0);
+            data_read : OUT std_logic;
+            data_readdata : IN std_logic_vector(31 DOWNTO 0);
+            data_write : OUT std_logic;
+            data_writedata : OUT std_logic_vector(31 DOWNTO 0);
+            data_waitrequest : IN std_logic;
+
+            register_output : OUT t_register_bank
+        );
+    END COMPONENT;
+
+    COMPONENT cache IS
+        GENERIC (
+            ram_size : INTEGER := 32768
+        );
+        PORT (
+            clock : IN std_logic;
+            reset : IN std_logic;
+
+            -- Avalon interface --
+            s_addr : IN std_logic_vector (31 DOWNTO 0);
+            s_read : IN std_logic;
+            s_readdata : OUT std_logic_vector (31 DOWNTO 0);
+            s_write : IN std_logic;
+            s_writedata : IN std_logic_vector (31 DOWNTO 0);
+            s_waitrequest : OUT std_logic;
+
+            m_addr : OUT INTEGER RANGE 0 TO ram_size - 1;
+            m_read : OUT std_logic;
+            m_readdata : IN std_logic_vector (7 DOWNTO 0);
+            m_write : OUT std_logic;
+            m_writedata : OUT std_logic_vector (7 DOWNTO 0);
+            m_waitrequest : IN std_logic
+        );
+    END COMPONENT;
+
+    COMPONENT memory IS
+        GENERIC (
+            ram_size : INTEGER := 32768;
+            mem_delay : TIME := 10 ns;
+            clock_period : TIME := 1 ns
+        );
+        PORT (
+            clock : IN STD_LOGIC;
+            writedata : IN STD_LOGIC_VECTOR (7 DOWNTO 0);
+            address : IN INTEGER RANGE 0 TO ram_size - 1;
+            memwrite : IN STD_LOGIC;
+            memread : IN STD_LOGIC;
+            readdata : OUT STD_LOGIC_VECTOR (7 DOWNTO 0);
+            waitrequest : OUT STD_LOGIC
+        );
+    END COMPONENT;
+
+    --test signals 
+    SIGNAL rst_processor : std_logic := '0';
+    SIGNAL rst_cache : std_logic := '0';
+    SIGNAL clk : std_logic := '0';
+    CONSTANT clk_period : TIME := 1 ns;
+    SIGNAL register_sigs : t_register_bank;
+
+    --processor and instruction cache signals
+    SIGNAL p2ic_addr : std_logic_vector (31 DOWNTO 0);
+    SIGNAL p2ic_read : std_logic;
+    SIGNAL ic2p_readdata : std_logic_vector (31 DOWNTO 0);
+    SIGNAL ic2p_waitrequest : std_logic;
+
+    --processor and data cache signals
+    SIGNAL p2dc_addr : std_logic_vector (31 DOWNTO 0);
+    SIGNAL p2dc_read : std_logic;
+    SIGNAL dc2p_readdata : std_logic_vector (31 DOWNTO 0);
+    SIGNAL p2dc_write : std_logic;
+    SIGNAL p2dc_writedata : std_logic_vector (31 DOWNTO 0);
+    SIGNAL dc2p_waitrequest : std_logic;
+
+    --instruction cache and instruction memory signals
+    SIGNAL ic2m_addr : INTEGER RANGE 0 TO 2147483647;
+    SIGNAL ic2m_read : std_logic;
+    SIGNAL m2ic_readdata : std_logic_vector (7 DOWNTO 0);
+    SIGNAL ic2m_write : std_logic;
+    SIGNAL ic2m_writedata : std_logic_vector (7 DOWNTO 0);
+    SIGNAL m2ic_waitrequest : std_logic;
+
+    --data cache and instruction memory signals
+    SIGNAL dc2m_addr : INTEGER RANGE 0 TO 2147483647;
+    SIGNAL dc2m_read : std_logic;
+    SIGNAL m2dc_readdata : std_logic_vector (7 DOWNTO 0);
+    SIGNAL dc2m_write : std_logic;
+    SIGNAL dc2m_writedata : std_logic_vector (7 DOWNTO 0);
+    SIGNAL m2dc_waitrequest : std_logic;
+
+    --memory IO signals
+    SIGNAL input2im_addr: INTEGER RANGE 0 TO 2147483647;
+    SIGNAL imem_addr: INTEGER RANGE 0 TO 2147483647;
+
+    SIGNAL input2dm_addr: INTEGER RANGE 0 TO 2147483647;
+    SIGNAL dmem_addr: INTEGER RANGE 0 TO 2147483647;
+
+    SIGNAL input2im_write: std_logic;
+    SIGNAL im_write: std_logic;
+
+    SIGNAL input2im_writedata: std_logic_vector(7 downto 0);
+    SIGNAL im_writedata: std_logic_vector(7 downto 0);
+
+    SIGNAL input2dm_read: std_logic;
+    SIGNAL dm_read: std_logic;
+
+    SIGNAL input2dm_readdata: std_logic_vector(7 downto 0);
+    SIGNAL dm_readdata: std_logic_vector(7 downto 0);
+
+BEGIN
+
+    dut : processor
+    PORT MAP(
+        clock => clk,
+        reset => rst_processor,
+
+        inst_addr => p2ic_addr,
+        inst_read => p2ic_read,
+        inst_readdata => ic2p_readdata,
+        inst_waitrequest => ic2p_waitrequest,
+
+        data_addr => p2dc_addr,
+        data_read => p2dc_read,
+        data_readdata => dc2p_readdata,
+        data_write => p2dc_write,
+        data_writedata => p2dc_writedata,
+        data_waitrequest => dc2p_waitrequest,
+        
+        register_output => register_sigs
+    );
+
+    incache : cache
+    PORT MAP(
+        clock => clk,
+        reset => rst_cache,
+
+        s_addr => p2ic_addr,
+        s_read => p2ic_read,
+        s_readdata => ic2p_readdata,
+        s_write => '0',
+        s_writedata => (OTHERS => '0'),
+        s_waitrequest => ic2p_waitrequest,
+
+        m_addr => ic2m_addr,
+        m_read => ic2m_read,
+        m_readdata => m2ic_readdata,
+        m_write => ic2m_write,
+        m_writedata => ic2m_writedata,
+        m_waitrequest => m2ic_waitrequest
+    );
+
+    inmem : memory
+    PORT MAP(
+        clock => clk,
+        writedata => im_writedata,
+        address => imem_addr,
+        --address => ic2m_addr,
+        memwrite => im_write,
+        memread => ic2m_read,
+        readdata => m2ic_readdata,
+        waitrequest => m2ic_waitrequest
+    );
+
+    datcache : cache
+    PORT MAP(
+        clock => clk,
+        reset => rst_cache,
+
+        s_addr => p2dc_addr,
+        s_read => p2dc_read,
+        s_readdata => dc2p_readdata,
+        s_write => p2dc_write,
+        s_writedata => p2dc_writedata,
+        s_waitrequest => dc2p_waitrequest,
+
+        m_addr => dc2m_addr,
+        m_read => dc2m_read,
+        m_readdata => m2dc_readdata,
+        m_write => dc2m_write,
+        m_writedata => dc2m_writedata,
+        m_waitrequest => m2dc_waitrequest
+    );
+
+    datmemory : memory
+    PORT MAP(
+        clock => clk,
+        writedata => dc2m_writedata,
+        address => dmem_addr,
+        --address => dc2m_addr,
+        memwrite => dc2m_write,
+        memread => dm_read,
+        readdata => dm_readdata,
+        waitrequest => m2dc_waitrequest
+    );
+
+    clk_process : PROCESS
+    BEGIN
+        clk <= '0';
+        WAIT FOR clk_period/2;
+        clk <= '1';
+        WAIT FOR clk_period/2;
+    END PROCESS;
+
+    test_process : PROCESS
+        CONSTANT filename : STRING := "Assembler/Assembler/program.txt"; -- use more than once
+        FILE file_pointer : text;
+        FILE file_RESULTS: text;
+        FILE file_registers: text;
+        VARIABLE line_content : std_logic_vector (31 downto 0);
+        VARIABLE line_input : line;
+        VARIABLE filestatus : file_open_status;
+        VARIABLE line_number : Integer;
+
+        variable v_OLINE     : line;
+        constant c_WIDTH : natural := 32;
+        Variable outputline : std_logic_vector (31 downto 0);
+    BEGIN
+        imem_addr<=input2im_addr;
+        dmem_addr<=input2dm_addr;
+
+        im_write<=input2im_write;
+        im_writedata<=input2im_writedata;
+
+        dm_read<= input2dm_read;
+        m2dc_readdata<= (others=> '0');
+        --dm_readdata<=input2dm_readdata;
+
+        rst_processor <= '1';
+        line_number :=0;
+        --read from binary into and place into in cache
+        file_open (filestatus, file_pointer, filename, READ_MODE);
+        file_open(file_RESULTS, "memory.txt", write_mode);
+        file_open(file_registers, "register_file.txt", write_mode);
+        
+        REPORT filename & LF & HT & "file_open_status = " & file_open_status'image(filestatus);
+        ASSERT filestatus = OPEN_OK REPORT "file_open_status /= file_ok" SEVERITY FAILURE; -- end simulation
+
+        WHILE NOT ENDFILE (file_pointer) LOOP
+            WAIT UNTIL falling_edge(clk); -- once per clock
+            readline (file_pointer, line_input);
+            REPORT line_input.all;
+            read (line_input, line_content);
+            input2im_addr <= line_number*4;
+            input2im_writedata <= line_content (7 downto 0);
+            input2im_write <= '1';
+            
+            wait until rising_edge(m2ic_waitrequest);
+            ic2m_write <= '0';
+
+            wait for clk_period;
+            input2im_addr <= line_number*4+1;
+            input2im_writedata <= line_content (15 downto 8);
+            input2im_write <= '1';
+
+            wait until rising_edge(m2ic_waitrequest);
+            input2im_write <= '0';
+
+            wait for clk_period;
+            input2im_addr <= line_number*4+2;
+            input2im_writedata <= line_content (23 downto 16);
+            input2im_write <= '1';
+
+            wait until rising_edge(m2ic_waitrequest);
+            input2im_write <= '0';
+
+            wait for clk_period;
+            input2im_addr <= line_number*4+3;
+            input2im_writedata <= line_content (31 downto 24);
+            input2im_write <= '1';
+
+            wait until rising_edge(m2ic_waitrequest);
+            input2im_write <= '0';
+        END LOOP;
+
+        WAIT UNTIL falling_edge(clk); -- the last datum can be used first
+        file_close (file_pointer);
+        REPORT filename & " closed.";
+
+        --execute
+        imem_addr<=ic2m_addr;
+        dmem_addr<=dc2m_addr;
+
+        im_write<=ic2m_write;
+        im_writedata<=ic2m_writedata;
+
+        dm_read<= m2dc_read;
+        m2dc_readdata<= dm_readdata;
+        rst_processor <= '0';
+        wait for clk_period*10000;
+
+        --output
+        imem_addr<=input2im_addr;
+        dmem_addr<=input2dm_addr;
+
+        im_write<=input2im_write;
+        im_writedata<=input2im_writedata;
+
+        dm_read<= input2dm_read;
+        m2dc_readdata<= (others=> '0');
+        FOR I IN 0 TO 31 LOOP
+            write(v_OLINE, register_sigs(I), right, c_WID)
+        END LOOP;
+
+        rst_processor <= '1';
+        for I in 0 to 4095 loop
+            WAIT UNTIL falling_edge(clk); -- once per clock
+            dmem_addr <= I*4;
+            dc2m_read <= '1';
+            
+            wait until rising_edge(m2dc_waitrequest);
+            outputline (7 downto 0) := dm_readdata;
+            input2dm_read <= '0';
+
+            wait for clk_period;
+            dmem_addr <= I*4+1;
+            input2dm_read <= '1';
+
+            wait until rising_edge(m2dc_waitrequest);
+            outputline (15 downto 8) := dm_readdata;
+            input2dm_read <= '0';
+
+            wait for clk_period;
+            dmem_addr <= I*4+2;
+            input2dm_read <= '1';
+
+            wait until rising_edge(m2dc_waitrequest);
+            outputline (23 downto 16) := dm_readdata;
+            input2dm_read <= '0';
+
+            wait for clk_period;
+            dmem_addr <= I*4+3;
+            input2dm_read <= '1';
+
+            wait until rising_edge(m2dc_waitrequest);
+            outputline (31 downto 24) := dm_readdata;
+            input2dm_read <= '0';
+
+            write(v_OLINE, outputline, right, c_WIDTH);
+            writeline(file_RESULTS, v_OLINE);
+        end loop;
+        
+        WAIT UNTIL falling_edge(clk); 
+        file_close (file_RESULTS);
+        file_close(file_registers);
+        REPORT "output_results.txt closed.";
+
+    END PROCESS;
+
+END;
