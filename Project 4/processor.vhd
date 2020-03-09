@@ -50,6 +50,7 @@ ARCHITECTURE proc_arch OF processor IS
     SIGNAL writeback_stall : std_logic := '0';
 
     SIGNAL count: Integer Range 0 to 4;
+    SIGNAL count_rst: Integer Range 0 to 4;
     --for fetching
     SIGNAL program_counter : std_logic_vector(31 DOWNTO 0);
     --SIGNAL instruction_register : std_logic_vector(31 DOWNTO 0);
@@ -113,23 +114,43 @@ BEGIN
                 execute_stall<='1';
                 memory_stall<='1';
                 writeback_stall<='1';
-                count<=4;
+                count_rst<=4;
             ELSIF (fetch_stall='0') then
-                if (count=4) then                       --count variable is used in case of resets
+                if (count=4)  then                       --count variable is used in case of resets
                     decode_stall<='0';
-                    count<=3;
-                elsif (count = 3) then 
-                    count<=2;
-                    execute_stall<='0';
-                elsif (count = 2) then 
-                    count<=1;
+                    execute_stall<='1';
                     memory_stall<='0';
-                elsif (count=1) then
-                    count<=0;
+                    writeback_stall<='0';
+                    count_rst<=3;
+                elsif ((count_rst=4) and (count /=4)) then 
+                    decode_stall<='0';
+                    execute_stall<='1';
+                    memory_stall<='1';
+                    writeback_stall<='1';
+                    count_rst<=3;
+                elsif ((count=3)) then 
+                    count_rst<=2;
+                    execute_stall<='0';
+                    memory_stall<='1';
+                    writeback_stall<='0';
+                elsif ((count_rst=3) and count /=3) then
+                    count_rst<=2;
+                    execute_stall<='0';
+                    memory_stall<='1';
+                    writeback_stall<='1';
+                elsif ((count=2) or (count_rst=2)) then 
+                    count_rst<=1;
+                    memory_stall<='0';
+                    writeback_stall<='1';
+                elsif ((count=1) or (count_rst=1)) then
+                    count_rst<=0;
                     writeback_stall<='0';
                 end if;
                 CASE fetch_state IS
                     WHEN IDLE =>
+                        IF (ex_mem_branchtaken = '1') THEN              --needs to reset branch taken afterwards
+                            program_counter <= ex_mem_aluresult;
+                        END IF;
                         inst_addr <= program_counter;
                         inst_read <= '1';
                         fetch_complete <= '0';
@@ -250,6 +271,7 @@ BEGIN
                     WHEN "001000" => -- jr
                         ex_mem_aluresult <= id_ex_register_s;
                         ex_mem_branchtaken <= '1';
+                        count<=4;
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= 0;
                         ex_mem_isWriteback <= '0';
@@ -338,6 +360,7 @@ BEGIN
                     ex_mem_aluresult <= (others => '0');
                     ex_mem_aluresult(25 DOWNTO 0) <= id_ex_jaddress;
                     ex_mem_branchtaken <= '1';
+                    count<=4;
                     ex_mem_regvalue <= (others => '0');
                     ex_mem_writebackreg <= 0;
                     ex_mem_isWriteback <= '0';
@@ -345,6 +368,7 @@ BEGIN
                     ex_mem_aluresult <= (others => '0');
                     ex_mem_aluresult(25 DOWNTO 0) <= id_ex_jaddress;
                     ex_mem_branchtaken <= '1';
+                    count<=4;
                     ex_mem_regvalue <= (others  => '0');
                     ex_mem_writebackreg <= 0;
                     ex_mem_isWriteback <= '0';
@@ -353,6 +377,7 @@ BEGIN
                     IF (id_ex_register_s = id_ex_register_t) THEN 
                         ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + signed(id_ex_immediate_sign));
                         ex_mem_branchtaken <= '1';
+                        count<=4;
                     ELSE
                         ex_mem_aluresult <= (others => '0');
                         ex_mem_branchtaken <= '0';
@@ -364,6 +389,7 @@ BEGIN
                     IF (id_ex_register_s /= id_ex_register_t) THEN 
                         ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + signed(id_ex_immediate_sign));
                         ex_mem_branchtaken <= '1';
+                        count<=4;
                     ELSE
                         ex_mem_aluresult <= (others => '0');
                         ex_mem_branchtaken <= '0';
@@ -430,6 +456,8 @@ BEGIN
                     ex_mem_writebackreg <= 0;
                     ex_mem_isWriteback <= '0';
                 END CASE;
+            elsif (count/=0) then
+                count<=count-1;
             END IF;
         END IF;
     END PROCESS;
@@ -475,9 +503,9 @@ BEGIN
                         
                         memory_state <= WAITWRITE;
                     ELSE 
-                        fetch_stall <= '0';
-                        decode_stall <= '0';
-                        execute_stall <= '0';
+                        --fetch_stall <= '0';
+                        --decode_stall <= '0';
+                        --execute_stall <= '0';
 
                         data_addr <= (others => '0');
                         data_read <= '0';
