@@ -46,6 +46,7 @@ ARCHITECTURE proc_arch OF processor IS
     SIGNAL fetch_stall : std_logic := '0';
     SIGNAL decode_stall : std_logic := '0';
     SIGNAL execute_stall : std_logic := '0';
+    SIGNAL branch_stall : std_logic := '0';
     SIGNAL memory_stall : std_logic := '0';
     SIGNAL writeback_stall : std_logic := '0';
 
@@ -91,6 +92,7 @@ ARCHITECTURE proc_arch OF processor IS
     SIGNAL mem_wb_writeback: std_logic_vector(31 downto 0);
     SIGNAL mem_wb_writeback_index: Integer Range 0 to 31;
     SIGNAL mem_wb_isWriteback: std_logic;
+    SIGNAL mem_waiting : std_logic;
     
     -- SIGNAL mem_wb_operation : t_operation;
     
@@ -105,47 +107,48 @@ BEGIN
         IF (rising_edge(clock)) THEN
             IF (reset = '1') THEN
                 program_counter <= (OTHERS => '0');
-                if_id_instruction <= (OTHERS => '0');
+                if_id_instruction <= "00000000000000000000000000100000";
                 --instruction_register <= (OTHERS => '0');
                 fetch_state<=IDLE;
                 fetch_complete<='0';
                 inst_read<='0';
-                decode_stall<='1';
-                execute_stall<='1';
-                memory_stall<='1';
-                writeback_stall<='1';
-                count_rst<=4;
+                -- decode_stall<='1';
+                -- execute_stall<='1';
+                -- memory_stall<='1';
+                -- writeback_stall<='1';
+                -- count_rst<=4;
+            ELSIF (mem_waiting = '1') THEN 
             ELSIF (fetch_stall='0') then
-                if (count=4)  then                       --count variable is used in case of resets
-                    decode_stall<='0';
-                    execute_stall<='1';
-                    memory_stall<='0';
-                    writeback_stall<='0';
-                    count_rst<=3;
-                elsif ((count_rst=4) and (count /=4)) then 
-                    decode_stall<='0';
-                    execute_stall<='1';
-                    memory_stall<='1';
-                    writeback_stall<='1';
-                    count_rst<=3;
-                elsif ((count=3)) then 
-                    count_rst<=2;
-                    execute_stall<='0';
-                    memory_stall<='1';
-                    writeback_stall<='0';
-                elsif ((count_rst=3) and count /=3) then
-                    count_rst<=2;
-                    execute_stall<='0';
-                    memory_stall<='1';
-                    writeback_stall<='1';
-                elsif ((count=2) or (count_rst=2)) then 
-                    count_rst<=1;
-                    memory_stall<='0';
-                    writeback_stall<='1';
-                elsif ((count=1) or (count_rst=1)) then
-                    count_rst<=0;
-                    writeback_stall<='0';
-                end if;
+                -- if (count=4)  then                       --count variable is used in case of resets
+                --     decode_stall<='0';
+                --     execute_stall<='1';
+                --     memory_stall<='0';
+                --     writeback_stall<='0';
+                --     count_rst<=3;
+                -- elsif ((count_rst=4) and (count /=4)) then 
+                --     decode_stall<='0';
+                --     execute_stall<='1';
+                --     memory_stall<='1';
+                --     writeback_stall<='1';
+                --     count_rst<=3;
+                -- elsif ((count=3)) then 
+                --     count_rst<=2;
+                --     execute_stall<='0';
+                --     memory_stall<='1';
+                --     writeback_stall<='0';
+                -- elsif ((count_rst=3) and count /=3) then
+                --     count_rst<=2;
+                --     execute_stall<='0';
+                --     memory_stall<='1';
+                --     writeback_stall<='1';
+                -- elsif ((count=2) or (count_rst=2)) then 
+                --     count_rst<=1;
+                --     memory_stall<='0';
+                --     writeback_stall<='1';
+                -- elsif ((count=1) or (count_rst=1)) then
+                --     count_rst<=0;
+                --     writeback_stall<='0';
+                -- end if;
                 CASE fetch_state IS
                     WHEN IDLE =>
                         IF (ex_mem_branchtaken = '1') THEN              --needs to reset branch taken afterwards
@@ -154,9 +157,9 @@ BEGIN
                         inst_addr <= program_counter;
                         inst_read <= '1';
                         fetch_complete <= '0';
+                        decode_stall <= '1';
                         fetch_state <= WAITING;
                         if_id_programcounter <= program_counter;
-                        program_counter <= std_logic_vector(unsigned(program_counter) + X"00000004");
                     WHEN WAITING =>
                         IF (ex_mem_branchtaken = '1') THEN 
                             program_counter <= ex_mem_aluresult;
@@ -165,7 +168,11 @@ BEGIN
                         IF (inst_waitrequest = '0') THEN
                             if_id_instruction <= inst_readdata;
                             fetch_complete <= '1';
+                            decode_stall <= '0';
                             fetch_state <= IDLE;
+                            IF (ex_mem_branchtaken = '0') THEN 
+                                program_counter <= std_logic_vector(unsigned(program_counter) + X"00000004");
+                            END IF;
                         END IF;
                 END CASE;
             END IF;
@@ -181,9 +188,25 @@ BEGIN
             if (reset = '1') THEN
                 id_regwriteback_ex:=0;
                 id_regwriteback_mem:=0;
-
                 
-            elsif (fetch_complete = '1' AND fetch_stall = '0') then
+                id_ex_pc<=program_counter;
+                id_ex_opcode<="000000";
+                id_ex_funct<="100000";
+                id_ex_shamt<="00000";
+
+                id_ex_register_s <= (others=>'0');
+                id_ex_register_t_index<=0;
+                id_ex_register_t<=(others=>'0');
+                id_ex_register_d_index<=0;
+                
+                --forwading 
+                id_ex_forwardex<="00";
+                id_regwriteback_mem:=id_regwriteback_ex;
+                id_regwriteback_ex:=0;
+            ELSIF (mem_waiting = '1') THEN 
+
+            elsif (fetch_complete = '1' AND decode_stall = '0') then
+                execute_stall <= '0';
                 id_ex_pc <= if_id_programcounter;
                 
                 id_ex_opcode<=if_id_instruction(31 downto 26);
@@ -214,20 +237,21 @@ BEGIN
                 id_regwriteback_ex:=to_integer(unsigned(if_id_instruction(15 downto 11)));
             
             else        --insert no op 
-                id_ex_pc<=program_counter;
-                id_ex_opcode<="000000";
-                id_ex_funct<="100000";
-                id_ex_shamt<="00000";
+                -- id_ex_pc<=program_counter;
+                -- id_ex_opcode<="000000";
+                -- id_ex_funct<="100000";
+                -- id_ex_shamt<="00000";
 
-                id_ex_register_s <= (others=>'0');
-                id_ex_register_t_index<=0;
-                id_ex_register_t<=(others=>'0');
-                id_ex_register_d_index<=0;
+                -- id_ex_register_s <= (others=>'0');
+                -- id_ex_register_t_index<=0;
+                -- id_ex_register_t<=(others=>'0');
+                -- id_ex_register_d_index<=0;
                 
-                --forwading 
-                id_ex_forwardex<="00";
-                id_regwriteback_mem:=id_regwriteback_ex;
-                id_regwriteback_ex:=0;
+                -- --forwading 
+                -- id_ex_forwardex<="00";
+                -- id_regwriteback_mem:=id_regwriteback_ex;
+                -- id_regwriteback_ex:=0;
+                execute_stall <= '1';
             end if;
 
         end if;     
@@ -236,15 +260,22 @@ BEGIN
 
     execute_process : PROCESS (clock)
         VARIABLE mult_result : std_logic_vector(63 DOWNTO 0);
+        variable btaken: std_logic;
     BEGIN
         IF (rising_edge(clock)) THEN
-            IF (reset = '1') THEN 
+            IF (reset = '1' or execute_stall = '1') THEN 
+                memory_stall <= '1';
                 ex_mem_aluresult <= (others => '0');
                 ex_mem_branchtaken <= '0';
                 ex_mem_regvalue <= (others => '0');
                 ex_mem_isWriteback <= '0';
                 ex_mem_opcode <= (others => '0');
+            ELSIF (mem_waiting = '1') THEN 
+            
+            ELSIF (execute_stall = '0' AND branch_stall = '1') THEN 
+                branch_stall <= '1';
             ELSIF (execute_stall = '0') THEN
+                memory_stall <= '0';
                 ex_mem_opcode <= id_ex_opcode;
                 
                 CASE id_ex_opcode IS
@@ -271,7 +302,7 @@ BEGIN
                     WHEN "001000" => -- jr
                         ex_mem_aluresult <= id_ex_register_s;
                         ex_mem_branchtaken <= '1';
-                        count<=4;
+                        --count<=4;
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= 0;
                         ex_mem_isWriteback <= '0';
@@ -360,7 +391,7 @@ BEGIN
                     ex_mem_aluresult <= (others => '0');
                     ex_mem_aluresult(25 DOWNTO 0) <= id_ex_jaddress;
                     ex_mem_branchtaken <= '1';
-                    count<=4;
+                    --count<=4;
                     ex_mem_regvalue <= (others => '0');
                     ex_mem_writebackreg <= 0;
                     ex_mem_isWriteback <= '0';
@@ -368,16 +399,18 @@ BEGIN
                     ex_mem_aluresult <= (others => '0');
                     ex_mem_aluresult(25 DOWNTO 0) <= id_ex_jaddress;
                     ex_mem_branchtaken <= '1';
-                    count<=4;
-                    ex_mem_regvalue <= (others  => '0');
-                    ex_mem_writebackreg <= 0;
-                    ex_mem_isWriteback <= '0';
-                    register_bank(31) <= std_logic_vector(unsigned(id_ex_pc) + to_unsigned(8, 32));
+                    --count<=4;
+                    ex_mem_regvalue <= std_logic_vector(unsigned(id_ex_pc) + to_unsigned(8, 32));
+                    ex_mem_writebackreg <= 31;
+                    ex_mem_isWriteback <= '1';
+                    -- register_bank(31) <= std_logic_vector(unsigned(id_ex_pc) + to_unsigned(8, 32));
                 WHEN "000100" => -- beq
                     IF (id_ex_register_s = id_ex_register_t) THEN 
-                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + signed(id_ex_immediate_sign));
+                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
                         ex_mem_branchtaken <= '1';
-                        count<=4;
+                        --count<=4;
+                        -- execute_stall <= '1';
+                        branch_stall <= '1';
                     ELSE
                         ex_mem_aluresult <= (others => '0');
                         ex_mem_branchtaken <= '0';
@@ -389,7 +422,8 @@ BEGIN
                     IF (id_ex_register_s /= id_ex_register_t) THEN 
                         ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + signed(id_ex_immediate_sign));
                         ex_mem_branchtaken <= '1';
-                        count<=4;
+                        --count<=4;
+
                     ELSE
                         ex_mem_aluresult <= (others => '0');
                         ex_mem_branchtaken <= '0';
@@ -456,8 +490,6 @@ BEGIN
                     ex_mem_writebackreg <= 0;
                     ex_mem_isWriteback <= '0';
                 END CASE;
-            elsif (count/=0) then
-                count<=count-1;
             END IF;
         END IF;
     END PROCESS;
@@ -465,13 +497,16 @@ BEGIN
     memory_process : PROCESS (clock)
     BEGIN
         IF (rising_edge(clock)) THEN 
-            IF (reset = '1') THEN 
+            IF (reset = '1' or memory_stall = '1') THEN 
+                writeback_stall <= '1';
                 memory_state <= IDLE;
                 mem_wb_loaded <= (others => '0');
                 mem_wb_writeback <= (others => '0');
                 mem_wb_writeback_index <= 0;
                 mem_wb_isWriteback <= '0';
+                mem_waiting <= '0';
             ELSIF (memory_stall='0') THEN 
+                writeback_stall <= '0';
                 mem_wb_writeback<= ex_mem_aluresult;
                 mem_wb_isWriteback<= ex_mem_isWriteback;
                 mem_wb_writeback_index<=ex_mem_writebackreg;
@@ -480,9 +515,7 @@ BEGIN
                 WHEN IDLE =>
                     IF (ex_mem_opcode="100011") THEN --load
                         --mem_loaded<= get from memory [ex_mem_aluresult]
-                        fetch_stall <= '1';
-                        decode_stall <= '1';
-                        execute_stall <= '1';
+                        mem_waiting <= '1';
                         
                         data_addr <= ex_mem_aluresult;
                         data_read <= '1';
@@ -492,9 +525,7 @@ BEGIN
                         memory_state <= WAITREAD;
                     ELSIF (ex_mem_opcode="101011") THEN  --store
                         --store ex_mem_regvalue into memory [ex_mem_aluresult]
-                        fetch_stall <= '1';
-                        decode_stall <= '1';
-                        execute_stall <= '1';
+                        mem_waiting <= '1';
 
                         data_addr <= ex_mem_aluresult;
                         data_read <= '0';
@@ -502,11 +533,14 @@ BEGIN
                         data_writedata <= ex_mem_regvalue;
                         
                         memory_state <= WAITWRITE;
+                    ELSIF (ex_mem_opcode="000011") THEN 
+                        mem_waiting <= '0';
+                        mem_wb_writeback <= ex_mem_regvalue;
                     ELSE 
                         --fetch_stall <= '0';
                         --decode_stall <= '0';
                         --execute_stall <= '0';
-
+                        mem_waiting <= '0';
                         data_addr <= (others => '0');
                         data_read <= '0';
                         data_write <= '0';
@@ -514,12 +548,10 @@ BEGIN
                     END IF;
                 WHEN WAITREAD =>
                     IF (data_waitrequest = '0') THEN 
-                        mem_wb_loaded <= data_readdata;
+                        mem_wb_writeback  <= data_readdata;
                         memory_state <= IDLE;
 
-                        fetch_stall <= '0';
-                        decode_stall <= '0';
-                        execute_stall <= '0';
+                        mem_waiting <= '0';
                         data_addr <= (others => '0');
                         data_read <= '0';
                         data_write <= '0';
@@ -529,9 +561,7 @@ BEGIN
                     IF (data_waitrequest = '0') THEN 
                         memory_state <= IDLE;
 
-                        fetch_stall <= '0';
-                        decode_stall <= '0';
-                        execute_stall <= '0';
+                        mem_waiting <= '0';
                         data_addr <= (others => '0');
                         data_read <= '0';
                         data_write <= '0';

@@ -223,7 +223,7 @@ BEGIN
     END PROCESS;
 
     test_process : PROCESS
-        CONSTANT filename : STRING := "Assembler/Assembler/program.txt"; -- use more than once
+        CONSTANT filename : STRING := "Assembler/program.txt"; -- use more than once
         FILE file_pointer : text;
         FILE file_RESULTS: text;
         FILE file_registers: text;

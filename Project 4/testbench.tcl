@@ -31,6 +31,20 @@ proc AddWaves {} {
     add wave -position end sim:/processor_tb/dm_read
     add wave -position end sim:/processor_tb/dm_readdata
     add wave -position end sim:/processor_tb/imem_addr
+    add wave -position end sim:/processor_tb/dut/fetch_state
+    add wave -position end sim:/processor_tb/dut/program_counter
+    add wave -position end sim:/processor_tb/dut/if_id_instruction
+    add wave -position end sim:/processor_tb/dut/id_ex_opcode
+    add wave -position end sim:/processor_tb/dut/id_ex_funct
+    add wave -position end sim:/processor_tb/dut/count
+    add wave -position end sim:/processor_tb/dut/ex_mem_aluresult
+    add wave -position end sim:/processor_tb/dut/ex_mem_branchtaken
+    add wave -position end sim:/processor_tb/dut/mem_wb_writeback
+    add wave -position end sim:/processor_tb/dut/fetch_stall
+    add wave -position end sim:/processor_tb/dut/decode_stall
+    add wave -position end sim:/processor_tb/dut/execute_stall
+    add wave -position end sim:/processor_tb/dut/memory_stall
+    add wave -position end sim:/processor_tb/dut/writeback_stall
 }
 
 vlib work
