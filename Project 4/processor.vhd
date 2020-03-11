@@ -265,7 +265,11 @@ BEGIN
     BEGIN
         IF (rising_edge(clock)) THEN
             IF (reset = '1' or execute_stall = '1') THEN 
-                memory_stall <= '1';
+                IF (mem_waiting = '1') THEN 
+                    memory_stall <= '0';
+                else 
+                    memory_stall <= '1';
+                end if;
                 ex_mem_aluresult <= (others => '0');
                 ex_mem_branchtaken <= '0';
                 ex_mem_regvalue <= (others => '0');
@@ -498,7 +502,8 @@ BEGIN
     memory_process : PROCESS (clock)
     BEGIN
         IF (rising_edge(clock)) THEN 
-            IF (reset = '1' or memory_stall = '1') THEN 
+            IF (reset = '1') THEN 
+            --IF (reset = '1' or memory_stall = '1') THEN 
                 writeback_stall <= '1';
                 memory_state <= IDLE;
                 mem_wb_loaded <= (others => '0');

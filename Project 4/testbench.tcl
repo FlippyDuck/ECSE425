@@ -8,12 +8,12 @@ proc AddWaves {} {
     add wave -position end sim:/processor_tb/ic2p_readdata
     add wave -position end sim:/processor_tb/ic2p_waitrequest
     ;#add wave -position end sim:/processor_tb/dut/inst_addr
-    ;#add wave -position end sim:/processor_tb/p2dc_addr
-    ;#add wave -position end sim:/processor_tb/p2dc_read
+    add wave -position end sim:/processor_tb/p2dc_addr
+    add wave -position end sim:/processor_tb/p2dc_read
     ;#add wave -position end sim:/processor_tb/dc2p_readdata
-    ;#add wave -position end sim:/processor_tb/p2dc_write
-    ;#add wave -position end sim:/processor_tb/p2dc_writedata
-    ;#add wave -position end sim:/processor_tb/dc2p_waitrequest
+    add wave -position end sim:/processor_tb/p2dc_write
+    add wave -position end sim:/processor_tb/p2dc_writedata
+    add wave -position end sim:/processor_tb/dc2p_waitrequest
     add wave -position end sim:/processor_tb/ic2m_addr
     add wave -position end sim:/processor_tb/ic2m_read
     add wave -position end sim:/processor_tb/m2ic_readdata
@@ -21,12 +21,12 @@ proc AddWaves {} {
     add wave -position end sim:/processor_tb/ic2m_writedata
     add wave -position end sim:/processor_tb/m2ic_waitrequest
     add wave -position end sim:/processor_tb/inmem/address
-    ;#add wave -position end sim:/processor_tb/dc2m_addr
+    add wave -position end sim:/processor_tb/dc2m_addr
     ;#add wave -position end sim:/processor_tb/dc2m_read
     ;#add wave -position end sim:/processor_tb/m2dc_readdata
-    ;#add wave -position end sim:/processor_tb/dc2m_write
-    ;#add wave -position end sim:/processor_tb/dc2m_writedata
-    ;#add wave -position end sim:/processor_tb/m2dc_waitrequest
+    add wave -position end sim:/processor_tb/dc2m_write
+    add wave -position end sim:/processor_tb/dc2m_writedata
+    add wave -position end sim:/processor_tb/m2dc_waitrequest
     add wave -position end sim:/processor_tb/dut/register_bank
     add wave -position end sim:/processor_tb/incache/cache_data
     ;#add wave -position end sim:/processor_tb/im_write
@@ -42,12 +42,16 @@ proc AddWaves {} {
     add wave -position end sim:/processor_tb/dut/count
     add wave -position end sim:/processor_tb/dut/ex_mem_aluresult
     add wave -position end sim:/processor_tb/dut/ex_mem_branchtaken
+    add wave -position end sim:/processor_tb/dut/ex_mem_regvalue
     add wave -position end sim:/processor_tb/dut/mem_wb_writeback
+    add wave -position end sim:/processor_tb/dut/mem_waiting
     add wave -position end sim:/processor_tb/dut/fetch_stall
     add wave -position end sim:/processor_tb/dut/decode_stall
     add wave -position end sim:/processor_tb/dut/execute_stall
     add wave -position end sim:/processor_tb/dut/memory_stall
     add wave -position end sim:/processor_tb/dut/writeback_stall
+    add wave -position end sim:/processor_tb/dut/memory_state
+    add wave -position end sim:/processor_tb/datcache/state
 }
 
 vlib work
@@ -70,4 +74,4 @@ force -deposit clk 0 0 ns, 1 0.5 ns -repeat 1 ns
 AddWaves
 
 ;# Run for 100000 ns
-run 100000ns
+run 200000ns
