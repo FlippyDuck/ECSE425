@@ -72,6 +72,24 @@ ARCHITECTURE behavior OF processor_tb IS
         );
     END COMPONENT;
 
+    COMPONENT bmux IS 
+    PORT (
+        a : IN std_logic;
+        b : IN std_logic;
+        sel : IN std_logic;
+        x : OUT std_logic
+        );
+    END COMPONENT;
+
+    COMPONENT vmux IS
+    PORT (
+        a : IN std_logic_vector(31 DOWNTO 0);
+        b : IN std_logic_vector(31 DOWNTO 0);
+        sel : IN std_logic;
+        x : OUT std_logic_vector(31 DOWNTO 0)
+        );
+    END COMPONENT;
+
     --test signals 
     SIGNAL rst_processor : std_logic := '0';
     SIGNAL rst_cache : std_logic := '0';
@@ -110,23 +128,33 @@ ARCHITECTURE behavior OF processor_tb IS
     SIGNAL m2dc_waitrequest : std_logic;
 
     --memory IO signals
-    SIGNAL input2im_addr: INTEGER RANGE 0 TO 2147483647;
-    SIGNAL imem_addr: INTEGER RANGE 0 TO 2147483647;
+    -- SIGNAL input2im_addr: INTEGER RANGE 0 TO 2147483647;
+    SIGNAL init_ic_addr: std_logic_vector(31 DOWNTO 0);
 
-    SIGNAL input2dm_addr: INTEGER RANGE 0 TO 2147483647;
-    SIGNAL dmem_addr: INTEGER RANGE 0 TO 2147483647;
+    -- SIGNAL input2dm_addr: INTEGER RANGE 0 TO 2147483647;
+    SIGNAL final_dc_addr: std_logic_vector(31 DOWNTO 0);
 
-    SIGNAL input2im_write: std_logic;
-    SIGNAL im_write: std_logic;
+    -- SIGNAL input2im_write: std_logic;
+    SIGNAL init_ic_write: std_logic;
 
-    SIGNAL input2im_writedata: std_logic_vector(7 downto 0);
-    SIGNAL im_writedata: std_logic_vector(7 downto 0);
+    -- SIGNAL input2im_writedata: std_logic_vector(7 downto 0);
+    SIGNAL init_ic_writedata: std_logic_vector(31 downto 0);
 
-    SIGNAL input2dm_read: std_logic;
-    SIGNAL dm_read: std_logic;
+    -- SIGNAL input2dm_read: std_logic;
+    SIGNAL final_dc_read: std_logic;
 
-    SIGNAL input2dm_readdata: std_logic_vector(7 downto 0);
-    SIGNAL dm_readdata: std_logic_vector(7 downto 0);
+    -- SIGNAL input2dm_readdata: std_logic_vector(7 downto 0);
+    -- SIGNAL final_dc_readdata: std_logic_vector(31 downto 0);
+
+    SIGNAL ic_addr : std_logic_vector(31 downto 0);
+    SIGNAL ic_writedata : std_logic_vector(31 DOWNTO 0);
+    SIGNAL ic_write : std_logic;
+
+    SIGNAL dc_addr : std_logic_vector(31 DOWNTO 0);
+    -- SIGNAL dc_readdata : std_logic_vector(31 DOWNTO 0);
+    SIGNAL dc_read : std_logic;
+
+    SIGNAL selector : std_logic;
 
 BEGIN
 
@@ -155,11 +183,11 @@ BEGIN
         clock => clk,
         reset => rst_cache,
 
-        s_addr => p2ic_addr,
+        s_addr => ic_addr,
         s_read => p2ic_read,
         s_readdata => ic2p_readdata,
-        s_write => '0',
-        s_writedata => (OTHERS => '0'),
+        s_write => ic_write,
+        s_writedata => ic_writedata,
         s_waitrequest => ic2p_waitrequest,
 
         m_addr => ic2m_addr,
@@ -173,10 +201,10 @@ BEGIN
     inmem : memory
     PORT MAP(
         clock => clk,
-        writedata => im_writedata,
-        address => imem_addr,
+        writedata => ic2m_writedata,
+        address => ic2m_addr,
         --address => ic2m_addr,
-        memwrite => im_write,
+        memwrite => ic2m_write,
         memread => ic2m_read,
         readdata => m2ic_readdata,
         waitrequest => m2ic_waitrequest
@@ -187,8 +215,8 @@ BEGIN
         clock => clk,
         reset => rst_cache,
 
-        s_addr => p2dc_addr,
-        s_read => p2dc_read,
+        s_addr => dc_addr,
+        s_read => dc_read,
         s_readdata => dc2p_readdata,
         s_write => p2dc_write,
         s_writedata => p2dc_writedata,
@@ -206,13 +234,54 @@ BEGIN
     PORT MAP(
         clock => clk,
         writedata => dc2m_writedata,
-        address => dmem_addr,
+        address => dc2m_addr,
         --address => dc2m_addr,
         memwrite => dc2m_write,
-        memread => dm_read,
-        readdata => dm_readdata,
+        memread => dc2m_read,
+        readdata => m2dc_readdata,
         waitrequest => m2dc_waitrequest
     );
+
+    icache_addr_mux : vmux
+    PORT MAP(
+        a => p2ic_addr,
+        b => init_ic_addr,
+        sel => selector,
+        x => ic_addr
+    );
+
+    icache_data_mux : vmux
+    PORT MAP (
+        a => ic2p_readdata,
+        b => init_ic_writedata,
+        sel => selector,
+        x => ic_writedata
+    );
+
+    icache_write_mux : bmux
+    PORT MAP (
+        a => '0',
+        b => init_ic_write,
+        sel => selector,
+        x => ic_write
+    );
+
+    dcache_addr_mux : vmux
+    PORT MAP(
+        a => p2dc_addr,
+        b => final_dc_addr,
+        sel => selector,
+        x => dc_addr
+    );
+
+    dcache_read_mux : bmux
+    PORT MAP (
+        a => p2dc_read,
+        b => final_dc_read,
+        sel => selector,
+        x => dc_read
+    );
+    
 
     clk_process : PROCESS
     BEGIN
@@ -237,15 +306,15 @@ BEGIN
         Variable outputline : std_logic_vector (31 downto 0);
     BEGIN
         wait for clk_period;
-        
+        selector <='1';
         --imem_addr<=input2im_addr;
         --dmem_addr<=input2dm_addr;
 
         --im_write<=input2im_write;
         --im_writedata<=input2im_writedata;
 
-        dm_read<= '0';
-        m2dc_readdata<= (others=> '0');
+        -- dm_read<= '0';
+        -- m2dc_readdata<= (others=> '0');
         --dm_readdata<=input2dm_readdata;
 
         rst_processor <= '1';
@@ -259,59 +328,50 @@ BEGIN
         REPORT filename & LF & HT & "file_open_status = " & file_open_status'image(filestatus);
         ASSERT filestatus = OPEN_OK REPORT "file_open_status /= file_ok" SEVERITY FAILURE; -- end simulation
 
+        WAIT FOR clk_period * 2;
+        rst_cache <= '0';
+        
         WHILE NOT ENDFILE (file_pointer) LOOP
             wait for clk_period;
             --WAIT UNTIL falling_edge(clk); -- once per clock
             readline (file_pointer, line_input);
             REPORT line_input.all;
             read (line_input, line_content);
-            imem_addr <= line_number*4;
-            --input2im_addr <= line_number*4;
-            im_writedata <= line_content (7 downto 0);
-            --input2im_writedata <= line_content (7 downto 0);
-            im_write<='1';
-            --input2im_write <= '1';
             
-            wait until rising_edge(m2ic_waitrequest);
-            im_write<='0';
-            --ic2m_write <= '0';
-            REPORT " here1 ";
+            -- init_ic_addr <= std_logic_vector(to_unsigned(line_number*4));
+            -- init_ic_writedata <= line_content (7 downto 0);
+            -- init_ic_write<='1';
+            
+            -- wait until rising_edge(ic2p_waitrequest);
+            -- init_ic_write<='0';
+            
+            -- wait for clk_period;
+            -- init_ic_addr <=  std_logic_vector(to_unsigned(line_number*4+1));
+            -- init_ic_writedata <= line_content (15 downto 8);
+            -- init_ic_write<='1';
+            
+            -- wait until rising_edge(ic2p_waitrequest);
+            -- init_ic_write<='0';
 
-            wait for clk_period;
-            imem_addr <= line_number*4+1;
-            --input2im_addr <= line_number*4+1;
-            im_writedata <= line_content (15 downto 8);
-            --input2im_writedata <= line_content (15 downto 8);
-            im_write<='1';
-            --input2im_write <= '1';
+            -- wait for clk_period;
+            -- init_ic_addr <=  std_logic_vector(to_unsigned(line_number*4+2));
+            -- init_ic_writedata <= line_content (23 downto 16);
+            -- init_ic_write<='1';
+           
+            -- wait until rising_edge(ic2p_waitrequest);
+            -- init_ic_write<='0';
+            
+            -- wait for clk_period;
+            -- init_ic_addr <=  std_logic_vector(to_unsigned(line_number*4+3));
+            -- init_ic_writedata <= line_content (31 downto 24);
+            
+            init_ic_writedata <= line_content;
+            init_ic_write<='1';
+            init_ic_addr <= std_logic_vector(to_unsigned(line_number * 4, 32));
 
-            wait until rising_edge(m2ic_waitrequest);
-            im_write<='0';
-            --input2im_write <= '0';
-
-            wait for clk_period;
-            imem_addr <= line_number*4+2;
-            --input2im_addr <= line_number*4+2;
-            im_writedata <= line_content (23 downto 16);
-            --input2im_writedata <= line_content (23 downto 16);
-            im_write<='1';
-            --input2im_write <= '1';
-
-            wait until rising_edge(m2ic_waitrequest);
-            im_write<='0';
-            --input2im_write <= '0';
-
-            wait for clk_period;
-            imem_addr <= line_number*4+3;
-            --input2im_addr <= line_number*4+3;
-            im_writedata <= line_content (31 downto 24);
-            --input2im_writedata <= line_content (31 downto 24);
-            im_write<='1';
-            --input2im_write <= '1';
-
-            wait until rising_edge(m2ic_waitrequest);
-            im_write<='0';
-            --input2im_write <= '0';
+            wait until rising_edge(ic2p_waitrequest);
+            init_ic_write<='0';
+            
             wait for clk_period;
             line_number:= line_number + 1;
         END LOOP;
@@ -321,41 +381,39 @@ BEGIN
         REPORT filename & " closed.";
 
         --execute
-        imem_addr<=ic2m_addr;
-        dmem_addr<=dc2m_addr;
+        selector <='0';
+        WAIT FOR clk_period * 2;
+        --imem_addr<=ic2m_addr;
+        --dmem_addr<=dc2m_addr;
 
-        im_write<=ic2m_write;
-        im_writedata<=ic2m_writedata;
+        --im_write<=ic2m_write;
+        --im_writedata<=ic2m_writedata;
 
-        dm_read<= dc2m_read;
-        m2dc_readdata<= dm_readdata;
+        --dm_read<= dc2m_read;
+        --m2dc_readdata<= dm_readdata;
         REPORT "Begin Execution";
         rst_processor <= '0';
-        rst_cache <= '0';
         --wait for clk_period*10000;
         for I in 0 to 10000 loop
-            imem_addr<=ic2m_addr;
-            dmem_addr<=dc2m_addr;
+            -- imem_addr<=ic2m_addr;
+            -- dmem_addr<=dc2m_addr;
+            --im_write<=ic2m_write;
+            --im_writedata<=ic2m_writedata;
 
-            im_write<=ic2m_write;
-            im_writedata<=ic2m_writedata;
-
-            dm_read<= dc2m_read;
-            m2dc_readdata<= dm_readdata;
+            --dm_read<= dc2m_read;
+            --m2dc_readdata<= dm_readdata;
             wait until rising_edge(clk);
         end loop;
 
         REPORT "End Execution";
         --output
-        --imem_addr<=input2im_addr;
-        --dmem_addr<=input2dm_addr;
+        selector <='1';
+        --im_write<=input2im_write;
+        --im_writedata<=input2im_writedata;
 
-        im_write<=input2im_write;
-        im_writedata<=input2im_writedata;
-
-        dm_read<='0';
+        --dm_read<='0';
         --dm_read<= input2dm_read;
-        m2dc_readdata<= (others=> '0');
+        --m2dc_readdata<= (others=> '0');
         
         FOR I IN 0 TO 31 LOOP
             write(v_OLINE, register_sigs(I), right, c_WIDTH);
@@ -366,45 +424,14 @@ BEGIN
         
         for I in 0 to 4095 loop
             WAIT UNTIL falling_edge(clk); -- once per clock
-            dmem_addr <= I*4;
-            dm_read <='1';
-            --dc2m_read <= '1';
+            final_dc_addr <=  std_logic_vector(to_unsigned(I*4, 32));
+            final_dc_read <='1';
             
-            wait until rising_edge(m2dc_waitrequest);
-            outputline (7 downto 0) := dm_readdata;
-            dm_read <='0';
-            --input2dm_read <= '0';
-
-            wait for clk_period;
-            dmem_addr <= I*4+1;
-            dm_read <='1';
-            --input2dm_read <= '1';
-
-            wait until rising_edge(m2dc_waitrequest);
-            outputline (15 downto 8) := dm_readdata;
-            dm_read <='0';
-            --input2dm_read <= '0';
-
-            wait for clk_period;
-            dmem_addr <= I*4+2;
-            dm_read <='1';
-            --input2dm_read <= '1';
-
-            wait until rising_edge(m2dc_waitrequest);
-            outputline (23 downto 16) := dm_readdata;
-            dm_read <='0';
-            --input2dm_read <= '0';
-
-            wait for clk_period;
-            dmem_addr <= I*4+3;
-            dm_read <='1';
-            --input2dm_read <= '1';
-
-            wait until rising_edge(m2dc_waitrequest);
-            outputline (31 downto 24) := dm_readdata;
-            dm_read <='0';
-            --input2dm_read <= '0';
-
+            
+            wait until rising_edge(dc2p_waitrequest);
+            outputline := dc2p_readdata;
+            final_dc_read <='0';
+            
             write(v_OLINE, outputline, right, c_WIDTH);
             writeline(file_RESULTS, v_OLINE);
         end loop;

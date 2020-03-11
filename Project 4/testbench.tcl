@@ -7,30 +7,33 @@ proc AddWaves {} {
     add wave -position end sim:/processor_tb/p2ic_read
     add wave -position end sim:/processor_tb/ic2p_readdata
     add wave -position end sim:/processor_tb/ic2p_waitrequest
-    add wave -position end sim:/processor_tb/p2dc_addr
-    add wave -position end sim:/processor_tb/p2dc_read
-    add wave -position end sim:/processor_tb/dc2p_readdata
-    add wave -position end sim:/processor_tb/p2dc_write
-    add wave -position end sim:/processor_tb/p2dc_writedata
-    add wave -position end sim:/processor_tb/dc2p_waitrequest
+    ;#add wave -position end sim:/processor_tb/dut/inst_addr
+    ;#add wave -position end sim:/processor_tb/p2dc_addr
+    ;#add wave -position end sim:/processor_tb/p2dc_read
+    ;#add wave -position end sim:/processor_tb/dc2p_readdata
+    ;#add wave -position end sim:/processor_tb/p2dc_write
+    ;#add wave -position end sim:/processor_tb/p2dc_writedata
+    ;#add wave -position end sim:/processor_tb/dc2p_waitrequest
     add wave -position end sim:/processor_tb/ic2m_addr
     add wave -position end sim:/processor_tb/ic2m_read
     add wave -position end sim:/processor_tb/m2ic_readdata
     add wave -position end sim:/processor_tb/ic2m_write
     add wave -position end sim:/processor_tb/ic2m_writedata
     add wave -position end sim:/processor_tb/m2ic_waitrequest
-    add wave -position end sim:/processor_tb/dc2m_addr
-    add wave -position end sim:/processor_tb/dc2m_read
-    add wave -position end sim:/processor_tb/m2dc_readdata
-    add wave -position end sim:/processor_tb/dc2m_write
-    add wave -position end sim:/processor_tb/dc2m_writedata
-    add wave -position end sim:/processor_tb/m2dc_waitrequest
+    add wave -position end sim:/processor_tb/inmem/address
+    ;#add wave -position end sim:/processor_tb/dc2m_addr
+    ;#add wave -position end sim:/processor_tb/dc2m_read
+    ;#add wave -position end sim:/processor_tb/m2dc_readdata
+    ;#add wave -position end sim:/processor_tb/dc2m_write
+    ;#add wave -position end sim:/processor_tb/dc2m_writedata
+    ;#add wave -position end sim:/processor_tb/m2dc_waitrequest
     add wave -position end sim:/processor_tb/dut/register_bank
-    add wave -position end sim:/processor_tb/im_write
-    add wave -position end sim:/processor_tb/im_writedata
-    add wave -position end sim:/processor_tb/dm_read
-    add wave -position end sim:/processor_tb/dm_readdata
-    add wave -position end sim:/processor_tb/imem_addr
+    add wave -position end sim:/processor_tb/incache/cache_data
+    ;#add wave -position end sim:/processor_tb/im_write
+    ;#add wave -position end sim:/processor_tb/im_writedata
+    ;#add wave -position end sim:/processor_tb/dm_read
+    ;#add wave -position end sim:/processor_tb/dm_readdata
+    ;#add wave -position end sim:/processor_tb/imem_addr
     add wave -position end sim:/processor_tb/dut/fetch_state
     add wave -position end sim:/processor_tb/dut/program_counter
     add wave -position end sim:/processor_tb/dut/if_id_instruction
@@ -53,6 +56,8 @@ vlib work
 vcom cache.vhd
 vcom memory.vhd
 vcom processor.vhd
+vcom vmux.vhd
+vcom bmux.vhd
 vcom processor_tb.vhd
 
 ;# Start simulation

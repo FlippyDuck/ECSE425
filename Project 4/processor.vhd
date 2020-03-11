@@ -160,6 +160,9 @@ BEGIN
                         decode_stall <= '1';
                         fetch_state <= WAITING;
                         if_id_programcounter <= program_counter;
+                        IF (ex_mem_branchtaken = '0') THEN 
+                            program_counter <= std_logic_vector(unsigned(program_counter) + X"00000004");
+                        END IF;
                     WHEN WAITING =>
                         IF (ex_mem_branchtaken = '1') THEN 
                             program_counter <= ex_mem_aluresult;
@@ -169,10 +172,8 @@ BEGIN
                             if_id_instruction <= inst_readdata;
                             fetch_complete <= '1';
                             decode_stall <= '0';
+                            inst_read <= '0';
                             fetch_state <= IDLE;
-                            IF (ex_mem_branchtaken = '0') THEN 
-                                program_counter <= std_logic_vector(unsigned(program_counter) + X"00000004");
-                            END IF;
                         END IF;
                 END CASE;
             END IF;
