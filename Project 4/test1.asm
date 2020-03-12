@@ -16,5 +16,5 @@
 	mflo $12
 	j next
 	addi $1, $0, 0
-next: sll $13, $2, 1
+next: addi $13, $2, 1
 EoP:	beq	 $11, $11, EoP

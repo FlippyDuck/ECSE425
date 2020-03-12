@@ -121,7 +121,7 @@ BEGIN
             ELSIF (fetch_stall='0') then
                 CASE fetch_state IS
                     WHEN IDLE =>
-                        IF (ex_mem_branchtaken = '1') THEN              --needs to reset branch taken afterwards
+                        IF (branch_stall = '1') THEN              --needs to reset branch taken afterwards
                             program_counter <= ex_mem_aluresult;
                         END IF;
                         inst_addr <= program_counter;
@@ -130,12 +130,13 @@ BEGIN
                         decode_stall <= '1';
                         fetch_state <= WAITING;
                         if_id_programcounter <= program_counter;
-                        IF (ex_mem_branchtaken = '0') THEN 
+                        IF (branch_stall = '0') THEN 
                             program_counter <= std_logic_vector(unsigned(program_counter) + X"00000004");
                         END IF;
                     WHEN WAITING =>
-                        IF (ex_mem_branchtaken = '1') THEN 
+                        IF (branch_stall = '1') THEN 
                             program_counter <= ex_mem_aluresult;
+                            --binst <= ex_mem_aluresult;
                         END IF;
 
                         IF (inst_waitrequest = '0') THEN
@@ -231,7 +232,7 @@ BEGIN
 
     execute_process : PROCESS (clock)
         VARIABLE mult_result : std_logic_vector(63 DOWNTO 0);
-        variable btaken: std_logic;
+        variable bcount: std_logic;
     BEGIN
         IF (rising_edge(clock)) THEN
             IF (reset = '1' or execute_stall = '1') THEN 
@@ -240,15 +241,22 @@ BEGIN
                 else 
                     memory_stall <= '1';
                 end if;
-                ex_mem_aluresult <= (others => '0');
-                ex_mem_branchtaken <= '0';
+                --ex_mem_aluresult <= (others => '0');
+                --ex_mem_branchtaken <= '0';
                 ex_mem_regvalue <= (others => '0');
                 ex_mem_isWriteback <= '0';
                 ex_mem_opcode <= (others => '0');
+                --bcount :='0';
             ELSIF (mem_waiting = '1') THEN 
             
             ELSIF (execute_stall = '0' AND branch_stall = '1') THEN 
-                branch_stall <= '1';
+                if (bcount='1') then
+                    branch_stall <='0';
+                    bcount :='0';
+                else
+                    branch_stall <= '1';
+                    bcount :='1';
+                end if;
             ELSIF (execute_stall = '0') THEN
                 memory_stall <= '0';
                 ex_mem_opcode <= id_ex_opcode;
@@ -277,7 +285,8 @@ BEGIN
                     WHEN "001000" => -- jr
                         ex_mem_aluresult <= id_ex_register_s;
                         ex_mem_branchtaken <= '1';
-                        --count<=4;
+                        branch_stall<= '1';
+                        bcount :='0';
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= 0;
                         ex_mem_isWriteback <= '0';
@@ -364,17 +373,19 @@ BEGIN
                     END CASE;
                 WHEN "000010" => -- j
                     ex_mem_aluresult <= (others => '0');
-                    ex_mem_aluresult(25 DOWNTO 0) <= id_ex_jaddress;
+                    ex_mem_aluresult(25 DOWNTO 0) <= std_logic_vector(shift_left(signed(id_ex_jaddress),2));
                     ex_mem_branchtaken <= '1';
-                    --count<=4;
+                    branch_stall<= '1';
+                    bcount :='0';
                     ex_mem_regvalue <= (others => '0');
                     ex_mem_writebackreg <= 0;
                     ex_mem_isWriteback <= '0';
                 WHEN "000011" => -- jal
                     ex_mem_aluresult <= (others => '0');
-                    ex_mem_aluresult(25 DOWNTO 0) <= id_ex_jaddress;
+                    ex_mem_aluresult(25 DOWNTO 0) <= std_logic_vector(shift_left(signed(id_ex_jaddress),2));
                     ex_mem_branchtaken <= '1';
-                    --count<=4;
+                    branch_stall<= '1';
+                    bcount :='0';
                     ex_mem_regvalue <= std_logic_vector(unsigned(id_ex_pc) + to_unsigned(8, 32));
                     ex_mem_writebackreg <= 31;
                     ex_mem_isWriteback <= '1';
@@ -383,25 +394,29 @@ BEGIN
                     IF (id_ex_register_s = id_ex_register_t) THEN 
                         ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
                         ex_mem_branchtaken <= '1';
-                        --count<=4;
+                        branch_stall<= '1';
+                        bcount :='0';
                         -- execute_stall <= '1';
-                        branch_stall <= '1';
                     ELSE
                         ex_mem_aluresult <= (others => '0');
                         ex_mem_branchtaken <= '0';
+                        branch_stall <= '0';
                     END IF;
                     ex_mem_regvalue <= (others  => '0');
                     ex_mem_writebackreg <= 0;
                     ex_mem_isWriteback <= '0';
                 WHEN "000101" => -- bne
                     IF (id_ex_register_s /= id_ex_register_t) THEN 
-                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + signed(id_ex_immediate_sign));
+                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + signed(id_ex_immediate_sign));       --may need shifting
                         ex_mem_branchtaken <= '1';
+                        branch_stall <= '1';
+                        bcount := '0';
                         --count<=4;
 
                     ELSE
                         ex_mem_aluresult <= (others => '0');
                         ex_mem_branchtaken <= '0';
+                        branch_stall <= '0';
                     END IF;
                     ex_mem_regvalue <= (others => '0');
                     ex_mem_writebackreg <= 0;

@@ -17,15 +17,15 @@ proc AddWaves {} {
     add wave -position end sim:/processor_tb/ic2m_addr
     add wave -position end sim:/processor_tb/ic2m_read
     add wave -position end sim:/processor_tb/m2ic_readdata
-    add wave -position end sim:/processor_tb/ic2m_write
-    add wave -position end sim:/processor_tb/ic2m_writedata
+    ;#add wave -position end sim:/processor_tb/ic2m_write
+    ;#add wave -position end sim:/processor_tb/ic2m_writedata
     add wave -position end sim:/processor_tb/m2ic_waitrequest
     add wave -position end sim:/processor_tb/inmem/address
-    add wave -position end sim:/processor_tb/dc2m_addr
+    ;#add wave -position end sim:/processor_tb/dc2m_addr
     ;#add wave -position end sim:/processor_tb/dc2m_read
     ;#add wave -position end sim:/processor_tb/m2dc_readdata
-    add wave -position end sim:/processor_tb/dc2m_write
-    add wave -position end sim:/processor_tb/dc2m_writedata
+    ;#add wave -position end sim:/processor_tb/dc2m_write
+    ;#add wave -position end sim:/processor_tb/dc2m_writedata
     add wave -position end sim:/processor_tb/m2dc_waitrequest
     add wave -position end sim:/processor_tb/dut/register_bank
     add wave -position end sim:/processor_tb/incache/cache_data
@@ -39,7 +39,6 @@ proc AddWaves {} {
     add wave -position end sim:/processor_tb/dut/if_id_instruction
     add wave -position end sim:/processor_tb/dut/id_ex_opcode
     add wave -position end sim:/processor_tb/dut/id_ex_funct
-    add wave -position end sim:/processor_tb/dut/count
     add wave -position end sim:/processor_tb/dut/ex_mem_aluresult
     add wave -position end sim:/processor_tb/dut/ex_mem_branchtaken
     add wave -position end sim:/processor_tb/dut/ex_mem_regvalue
@@ -49,6 +48,7 @@ proc AddWaves {} {
     add wave -position end sim:/processor_tb/dut/fetch_stall
     add wave -position end sim:/processor_tb/dut/decode_stall
     add wave -position end sim:/processor_tb/dut/execute_stall
+    add wave -position end sim:/processor_tb/dut/branch_stall
     add wave -position end sim:/processor_tb/dut/memory_stall
     add wave -position end sim:/processor_tb/dut/writeback_stall
     add wave -position end sim:/processor_tb/dut/memory_state
