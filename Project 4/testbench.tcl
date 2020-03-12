@@ -10,7 +10,7 @@ proc AddWaves {} {
     ;#add wave -position end sim:/processor_tb/dut/inst_addr
     add wave -position end sim:/processor_tb/p2dc_addr
     add wave -position end sim:/processor_tb/p2dc_read
-    ;#add wave -position end sim:/processor_tb/dc2p_readdata
+    add wave -position end sim:/processor_tb/dc2p_readdata
     add wave -position end sim:/processor_tb/p2dc_write
     add wave -position end sim:/processor_tb/p2dc_writedata
     add wave -position end sim:/processor_tb/dc2p_waitrequest
@@ -44,6 +44,7 @@ proc AddWaves {} {
     add wave -position end sim:/processor_tb/dut/ex_mem_branchtaken
     add wave -position end sim:/processor_tb/dut/ex_mem_regvalue
     add wave -position end sim:/processor_tb/dut/mem_wb_writeback
+    add wave -position end sim:/processor_tb/dut/mem_wb_writeback_index
     add wave -position end sim:/processor_tb/dut/mem_waiting
     add wave -position end sim:/processor_tb/dut/fetch_stall
     add wave -position end sim:/processor_tb/dut/decode_stall

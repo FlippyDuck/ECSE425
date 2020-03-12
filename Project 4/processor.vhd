@@ -119,36 +119,6 @@ BEGIN
                 -- count_rst<=4;
             ELSIF (mem_waiting = '1') THEN 
             ELSIF (fetch_stall='0') then
-                -- if (count=4)  then                       --count variable is used in case of resets
-                --     decode_stall<='0';
-                --     execute_stall<='1';
-                --     memory_stall<='0';
-                --     writeback_stall<='0';
-                --     count_rst<=3;
-                -- elsif ((count_rst=4) and (count /=4)) then 
-                --     decode_stall<='0';
-                --     execute_stall<='1';
-                --     memory_stall<='1';
-                --     writeback_stall<='1';
-                --     count_rst<=3;
-                -- elsif ((count=3)) then 
-                --     count_rst<=2;
-                --     execute_stall<='0';
-                --     memory_stall<='1';
-                --     writeback_stall<='0';
-                -- elsif ((count_rst=3) and count /=3) then
-                --     count_rst<=2;
-                --     execute_stall<='0';
-                --     memory_stall<='1';
-                --     writeback_stall<='1';
-                -- elsif ((count=2) or (count_rst=2)) then 
-                --     count_rst<=1;
-                --     memory_stall<='0';
-                --     writeback_stall<='1';
-                -- elsif ((count=1) or (count_rst=1)) then
-                --     count_rst<=0;
-                --     writeback_stall<='0';
-                -- end if;
                 CASE fetch_state IS
                     WHEN IDLE =>
                         IF (ex_mem_branchtaken = '1') THEN              --needs to reset branch taken afterwards
@@ -556,7 +526,7 @@ BEGIN
                     IF (data_waitrequest = '0') THEN 
                         mem_wb_writeback  <= data_readdata;
                         memory_state <= IDLE;
-
+                        mem_wb_isWriteback<='1';
                         mem_waiting <= '0';
                         data_addr <= (others => '0');
                         data_read <= '0';
@@ -587,7 +557,8 @@ BEGIN
                     register_bank(i) <= (others => '0');
                 END LOOP;
             ELSIF (writeback_stall='0') then
-                if (mem_wb_isWriteback='1') then
+                IF (mem_waiting = '1') THEN 
+                elsif (mem_wb_isWriteback='1') then
                     register_bank(mem_wb_writeback_index)<=mem_wb_writeback;
                 end if;
             end if;
