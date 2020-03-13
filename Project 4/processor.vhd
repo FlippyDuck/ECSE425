@@ -407,7 +407,7 @@ BEGIN
                     ex_mem_isWriteback <= '0';
                 WHEN "000101" => -- bne
                     IF (id_ex_register_s /= id_ex_register_t) THEN 
-                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + signed(id_ex_immediate_sign));       --may need shifting
+                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign),2));       --may need shifting
                         ex_mem_branchtaken <= '1';
                         branch_stall <= '1';
                         bcount := '0';
