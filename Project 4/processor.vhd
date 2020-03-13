@@ -50,12 +50,8 @@ ARCHITECTURE proc_arch OF processor IS
     SIGNAL memory_stall : std_logic := '0';
     SIGNAL writeback_stall : std_logic := '0';
 
-    SIGNAL count: Integer Range 0 to 4;
-    SIGNAL count_rst: Integer Range 0 to 4;
     --for fetching
     SIGNAL program_counter : std_logic_vector(31 DOWNTO 0);
-    --SIGNAL instruction_register : std_logic_vector(31 DOWNTO 0);
-
     SIGNAL fetch_complete : std_logic := '0';
     SIGNAL fetch_state : t_fetch_state := IDLE;
     SIGNAL if_id_instruction : std_logic_vector(31 DOWNTO 0);
@@ -77,7 +73,7 @@ ARCHITECTURE proc_arch OF processor IS
     
     -- SIGNAL id_ex_operation : t_operation;
 
-    --for execute
+    --for executing
     -- SIGNAL ex_mem_operation : t_operation;
     SIGNAL ex_mem_aluresult : std_logic_vector(31 DOWNTO 0);
     SIGNAL ex_mem_branchtaken : std_logic;
@@ -95,13 +91,12 @@ ARCHITECTURE proc_arch OF processor IS
     SIGNAL mem_waiting : std_logic;
     
     -- SIGNAL mem_wb_operation : t_operation;
-    
 BEGIN
 
-    register_bank(0) <= (OTHERS => '0');
+    register_bank(0) <= (OTHERS => '0');                --$0 hardcoded to 0
+    register_output <= register_bank;                   --output registers for testbench
 
-    register_output <= register_bank;
-
+    --fetch the instruction from cache or mem
     fetch_process : PROCESS (clock)
     BEGIN
         IF (rising_edge(clock)) THEN
@@ -117,11 +112,13 @@ BEGIN
                 -- memory_stall<='1';
                 -- writeback_stall<='1';
                 -- count_rst<=4;
-            ELSIF (mem_waiting = '1') THEN 
+            ELSIF (mem_waiting = '1') THEN          --stall when waiting for mem
             ELSIF (fetch_stall='0') then
+                
                 CASE fetch_state IS
+                    --Idle when preparing to get new command, set signals to interact with iCache and change PC
                     WHEN IDLE =>
-                        IF (branch_stall = '1') THEN              --needs to reset branch taken afterwards
+                        IF (branch_stall = '1') THEN             
                             program_counter <= ex_mem_aluresult;
                         END IF;
                         inst_addr <= program_counter;
@@ -133,6 +130,8 @@ BEGIN
                         IF (branch_stall = '0') THEN 
                             program_counter <= std_logic_vector(unsigned(program_counter) + X"00000004");
                         END IF;
+                    
+                    --Waiting for cache to send instruction then propagate it to decode
                     WHEN WAITING =>
                         IF (branch_stall = '1') THEN 
                             program_counter <= ex_mem_aluresult;
@@ -151,6 +150,7 @@ BEGIN
         END IF;
     END PROCESS;
     
+    --decode instruction for execute stage
     decode_process : PROCESS (clock)
     variable id_regwriteback_ex: Integer Range 0 to 31;
     variable id_regwriteback_mem: Integer Range 0 to 31;
@@ -175,8 +175,9 @@ BEGIN
                 id_ex_forwardex<="00";
                 id_regwriteback_mem:=id_regwriteback_ex;
                 id_regwriteback_ex:=0;
-            ELSIF (mem_waiting = '1') THEN 
-
+            ELSIF (mem_waiting = '1') THEN                  --if memory write or read then stall until complete
+            
+            --update register for execute stage to use and check for data hazards
             elsif (fetch_complete = '1' AND decode_stall = '0') then
                 execute_stall <= '0';
                 id_ex_pc <= if_id_programcounter;
@@ -208,7 +209,7 @@ BEGIN
                 id_regwriteback_mem:=id_regwriteback_ex;
                 id_regwriteback_ex:=to_integer(unsigned(if_id_instruction(15 downto 11)));
             
-            else        --insert no op 
+            else        --insert stall if fetch not yet complete
                 -- id_ex_pc<=program_counter;
                 -- id_ex_opcode<="000000";
                 -- id_ex_funct<="100000";
@@ -230,6 +231,7 @@ BEGIN
 
     END PROCESS;
 
+    --execute commands 
     execute_process : PROCESS (clock)
         VARIABLE mult_result : std_logic_vector(63 DOWNTO 0);
         variable bcount: std_logic;
@@ -247,8 +249,9 @@ BEGIN
                 ex_mem_isWriteback <= '0';
                 ex_mem_opcode <= (others => '0');
                 --bcount :='0';
-            ELSIF (mem_waiting = '1') THEN 
+            ELSIF (mem_waiting = '1') THEN                      --if read or write then stall until done
             
+            --this is used to flush instructions after a successful branch taken
             ELSIF (execute_stall = '0' AND branch_stall = '1') THEN 
                 if (bcount='1') then
                     branch_stall <='0';
@@ -257,6 +260,8 @@ BEGIN
                     branch_stall <= '1';
                     bcount :='1';
                 end if;
+                
+            --populate registers and execute commands based on op code and function, branch target resolution occurs here
             ELSIF (execute_stall = '0') THEN
                 memory_stall <= '0';
                 ex_mem_opcode <= id_ex_opcode;
@@ -407,12 +412,10 @@ BEGIN
                     ex_mem_isWriteback <= '0';
                 WHEN "000101" => -- bne
                     IF (id_ex_register_s /= id_ex_register_t) THEN 
-                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign),2));       --may need shifting
+                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign),2));     
                         ex_mem_branchtaken <= '1';
                         branch_stall <= '1';
                         bcount := '0';
-                        --count<=4;
-
                     ELSE
                         ex_mem_aluresult <= (others => '0');
                         ex_mem_branchtaken <= '0';
@@ -484,6 +487,7 @@ BEGIN
         END IF;
     END PROCESS;
 
+    --perform load and stores and update writeback registers
     memory_process : PROCESS (clock)
     BEGIN
         IF (rising_edge(clock)) THEN 
@@ -503,6 +507,7 @@ BEGIN
                 mem_wb_writeback_index<=ex_mem_writebackreg;
 
                 CASE memory_state IS 
+                --idle when receiving new commands, determine if load or store and if not propagate info to writeback
                 WHEN IDLE =>
                     IF (ex_mem_opcode="100011") THEN --load
                         --mem_loaded<= get from memory [ex_mem_aluresult]
@@ -537,6 +542,8 @@ BEGIN
                         data_write <= '0';
                         data_writedata <= (others => '0');
                     END IF;
+                
+                --used when loading, stall all stages until read from dCache completes, propagate data to writeback registers
                 WHEN WAITREAD =>
                     IF (data_waitrequest = '0') THEN 
                         mem_wb_writeback  <= data_readdata;
@@ -548,10 +555,10 @@ BEGIN
                         data_write <= '0';
                         data_writedata <= (others => '0');
                     END IF;
+                --used when storing, stall all stages until write to dCache completes
                 WHEN WAITWRITE => 
                     IF (data_waitrequest = '0') THEN 
                         memory_state <= IDLE;
-
                         mem_waiting <= '0';
                         data_addr <= (others => '0');
                         data_read <= '0';
@@ -564,9 +571,11 @@ BEGIN
 
     END PROCESS;
 
+    --Write results of execution or loading into registers
     writeback_process : PROCESS (clock)
     BEGIN
         IF (rising_edge(clock)) THEN 
+            --init all regs to 0
             IF (reset = '1') THEN 
                 FOR i IN 0 TO 31 LOOP
                     register_bank(i) <= (others => '0');

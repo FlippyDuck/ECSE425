@@ -72,6 +72,7 @@ ARCHITECTURE behavior OF processor_tb IS
         );
     END COMPONENT;
 
+     --the muxes are used to select between the processor and testbench signals to the caches, for adding instructions and getting output
     COMPONENT bmux IS 
     PORT (
         a : IN std_logic;
@@ -127,34 +128,21 @@ ARCHITECTURE behavior OF processor_tb IS
     SIGNAL dc2m_writedata : std_logic_vector (7 DOWNTO 0);
     SIGNAL m2dc_waitrequest : std_logic;
 
-    --memory IO signals
-    -- SIGNAL input2im_addr: INTEGER RANGE 0 TO 2147483647;
+    --cache IO signals
     SIGNAL init_ic_addr: std_logic_vector(31 DOWNTO 0);
-
-    -- SIGNAL input2dm_addr: INTEGER RANGE 0 TO 2147483647;
     SIGNAL final_dc_addr: std_logic_vector(31 DOWNTO 0);
-
-    -- SIGNAL input2im_write: std_logic;
     SIGNAL init_ic_write: std_logic;
-
-    -- SIGNAL input2im_writedata: std_logic_vector(7 downto 0);
     SIGNAL init_ic_writedata: std_logic_vector(31 downto 0);
-
-    -- SIGNAL input2dm_read: std_logic;
     SIGNAL final_dc_read: std_logic;
-
-    -- SIGNAL input2dm_readdata: std_logic_vector(7 downto 0);
-    -- SIGNAL final_dc_readdata: std_logic_vector(31 downto 0);
+    SIGNAL selector : std_logic;
+    
 
     SIGNAL ic_addr : std_logic_vector(31 downto 0);
     SIGNAL ic_writedata : std_logic_vector(31 DOWNTO 0);
     SIGNAL ic_write : std_logic;
 
     SIGNAL dc_addr : std_logic_vector(31 DOWNTO 0);
-    -- SIGNAL dc_readdata : std_logic_vector(31 DOWNTO 0);
     SIGNAL dc_read : std_logic;
-
-    SIGNAL selector : std_logic;
 
 BEGIN
 
@@ -203,7 +191,6 @@ BEGIN
         clock => clk,
         writedata => ic2m_writedata,
         address => ic2m_addr,
-        --address => ic2m_addr,
         memwrite => ic2m_write,
         memread => ic2m_read,
         readdata => m2ic_readdata,
@@ -235,7 +222,6 @@ BEGIN
         clock => clk,
         writedata => dc2m_writedata,
         address => dc2m_addr,
-        --address => dc2m_addr,
         memwrite => dc2m_write,
         memread => dc2m_read,
         readdata => m2dc_readdata,
@@ -307,14 +293,14 @@ BEGIN
     BEGIN
         wait for clk_period;
         selector <='1';
-
         rst_processor <= '1';
         rst_cache <= '1';
         line_number :=0;
-        --read from binary into and place into in cache
-        file_open (filestatus, file_pointer, filename, READ_MODE);
-        file_open(file_RESULTS, "memory.txt", write_mode);
-        file_open(file_registers, "register_file.txt", write_mode);
+        
+        --read binary instructions into instruction cache
+        file_open (filestatus, file_pointer, filename, READ_MODE);              --binary I
+        file_open(file_RESULTS, "memory.txt", write_mode);                      --data memory
+        file_open(file_registers, "register_file.txt", write_mode);             --register outputs
         
         REPORT filename & LF & HT & "file_open_status = " & file_open_status'image(filestatus);
         ASSERT filestatus = OPEN_OK REPORT "file_open_status /= file_ok" SEVERITY FAILURE; -- end simulation
@@ -323,8 +309,8 @@ BEGIN
         rst_cache <= '0';
         
         WHILE NOT ENDFILE (file_pointer) LOOP
-            wait for clk_period;
-            --WAIT UNTIL falling_edge(clk); -- once per clock
+            wait for clk_period;            --once per clock
+            
             readline (file_pointer, line_input);
             REPORT line_input.all;
             read (line_input, line_content);
@@ -340,44 +326,23 @@ BEGIN
             line_number:= line_number + 1;
         END LOOP;
 
-        WAIT UNTIL falling_edge(clk); -- the last datum can be used first
+        WAIT UNTIL falling_edge(clk); 
         file_close (file_pointer);
         REPORT filename & " closed.";
 
-        --execute
+        --execute instructions in memory
         selector <='0';
         WAIT FOR clk_period * 2;
-        --imem_addr<=ic2m_addr;
-        --dmem_addr<=dc2m_addr;
-
-        --im_write<=ic2m_write;
-        --im_writedata<=ic2m_writedata;
-
-        --dm_read<= dc2m_read;
-        --m2dc_readdata<= dm_readdata;
+        
         REPORT "Begin Execution";
         rst_processor <= '0';
-        --wait for clk_period*10000;
-        for I in 0 to 10000 loop
-            -- imem_addr<=ic2m_addr;
-            -- dmem_addr<=dc2m_addr;
-            --im_write<=ic2m_write;
-            --im_writedata<=ic2m_writedata;
-
-            --dm_read<= dc2m_read;
-            --m2dc_readdata<= dm_readdata;
-            wait until rising_edge(clk);
-        end loop;
+        
+        wait for clk_period*10000;
 
         REPORT "End Execution";
-        --output
+        
+        --output register file and data memory
         selector <='1';
-        --im_write<=input2im_write;
-        --im_writedata<=input2im_writedata;
-
-        --dm_read<='0';
-        --dm_read<= input2dm_read;
-        --m2dc_readdata<= (others=> '0');
         
         FOR I IN 0 TO 31 LOOP
             write(v_OLINE, register_sigs(I), right, c_WIDTH);
