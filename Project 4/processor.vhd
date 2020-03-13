@@ -343,8 +343,8 @@ BEGIN
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= id_ex_register_d_index;
                         ex_mem_isWriteback <= '1';
-                    WHEN "100110" => -- xor
-                        ex_mem_aluresult <= id_ex_register_s XOR id_ex_register_t;
+                    WHEN "101000" => -- xor                                                 --assembler error should be 100110
+                        ex_mem_aluresult <= id_ex_register_s xor id_ex_register_t;
                         ex_mem_branchtaken <= '0';
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= id_ex_register_d_index;
