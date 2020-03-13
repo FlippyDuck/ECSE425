@@ -307,15 +307,6 @@ BEGIN
     BEGIN
         wait for clk_period;
         selector <='1';
-        --imem_addr<=input2im_addr;
-        --dmem_addr<=input2dm_addr;
-
-        --im_write<=input2im_write;
-        --im_writedata<=input2im_writedata;
-
-        -- dm_read<= '0';
-        -- m2dc_readdata<= (others=> '0');
-        --dm_readdata<=input2dm_readdata;
 
         rst_processor <= '1';
         rst_cache <= '1';
@@ -337,33 +328,6 @@ BEGIN
             readline (file_pointer, line_input);
             REPORT line_input.all;
             read (line_input, line_content);
-            
-            -- init_ic_addr <= std_logic_vector(to_unsigned(line_number*4));
-            -- init_ic_writedata <= line_content (7 downto 0);
-            -- init_ic_write<='1';
-            
-            -- wait until rising_edge(ic2p_waitrequest);
-            -- init_ic_write<='0';
-            
-            -- wait for clk_period;
-            -- init_ic_addr <=  std_logic_vector(to_unsigned(line_number*4+1));
-            -- init_ic_writedata <= line_content (15 downto 8);
-            -- init_ic_write<='1';
-            
-            -- wait until rising_edge(ic2p_waitrequest);
-            -- init_ic_write<='0';
-
-            -- wait for clk_period;
-            -- init_ic_addr <=  std_logic_vector(to_unsigned(line_number*4+2));
-            -- init_ic_writedata <= line_content (23 downto 16);
-            -- init_ic_write<='1';
-           
-            -- wait until rising_edge(ic2p_waitrequest);
-            -- init_ic_write<='0';
-            
-            -- wait for clk_period;
-            -- init_ic_addr <=  std_logic_vector(to_unsigned(line_number*4+3));
-            -- init_ic_writedata <= line_content (31 downto 24);
             
             init_ic_writedata <= line_content;
             init_ic_write<='1';

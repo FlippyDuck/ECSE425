@@ -382,7 +382,7 @@ BEGIN
                     ex_mem_isWriteback <= '0';
                 WHEN "000011" => -- jal
                     ex_mem_aluresult <= (others => '0');
-                    ex_mem_aluresult(25 DOWNTO 0) <= std_logic_vector(shift_left(signed(id_ex_jaddress),2));
+                    ex_mem_aluresult(25 DOWNTO 0) <= std_logic_vector(shift_left(signed(id_ex_jaddress),2));    --pc +8 because of branch delay slot
                     ex_mem_branchtaken <= '1';
                     branch_stall<= '1';
                     bcount :='0';
