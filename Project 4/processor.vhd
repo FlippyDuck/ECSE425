@@ -70,11 +70,8 @@ ARCHITECTURE proc_arch OF processor IS
     SIGNAL id_ex_shamt : std_logic_vector(4 DOWNTO 0);
     SIGNAL id_ex_funct: std_logic_vector(5 DOWNTO 0);
     SIGNAL id_ex_forwardex: std_logic_vector(1 downto 0);
-    
-    -- SIGNAL id_ex_operation : t_operation;
 
     --for executing
-    -- SIGNAL ex_mem_operation : t_operation;
     SIGNAL ex_mem_aluresult : std_logic_vector(31 DOWNTO 0);
     SIGNAL ex_mem_branchtaken : std_logic;
     SIGNAL ex_mem_regvalue : std_logic_vector(31 DOWNTO 0);
@@ -89,8 +86,11 @@ ARCHITECTURE proc_arch OF processor IS
     SIGNAL mem_wb_writeback_index: Integer Range 0 to 31;
     SIGNAL mem_wb_isWriteback: std_logic;
     SIGNAL mem_waiting : std_logic;
+
+    --for forwarding / hazard detection
+    SIGNAL id_ex_forwarding :  std_logic_vector(31 downto 0);     -- 31-27 are write back reg, 26 is replace in exe 0 or mem 1  
+    SIGNAL ex_mem_forwarding :  std_logic_vector(31 downto 0);     -- 31-27 are write back reg, 26 is replace in exe 0 or mem 1  
     
-    -- SIGNAL mem_wb_operation : t_operation;
 BEGIN
 
     register_bank(0) <= (OTHERS => '0');                --$0 hardcoded to 0
@@ -152,15 +152,13 @@ BEGIN
     
     --decode instruction for execute stage
     decode_process : PROCESS (clock)
-    variable id_regwriteback_ex: Integer Range 0 to 31;
-    variable id_regwriteback_mem: Integer Range 0 to 31;
-    --variable id_regwriteback_ex: Integer 0 to 31;
+    
+    variable id_regwriteback_ex: std_logic_vector (5 downto 0);     -- 5-1 is reg index and 0 is if load
+    variable id_regwriteback_mem: std_logic_vector (5 downto 0);
+   
     BEGIN
         IF (rising_edge(clock)) THEN 
             if (reset = '1') THEN
-                id_regwriteback_ex:=0;
-                id_regwriteback_mem:=0;
-                
                 id_ex_pc<=program_counter;
                 id_ex_opcode<="000000";
                 id_ex_funct<="100000";
@@ -173,8 +171,8 @@ BEGIN
                 
                 --forwading 
                 id_ex_forwardex<="00";
-                id_regwriteback_mem:=id_regwriteback_ex;
-                id_regwriteback_ex:=0;
+                id_regwriteback_mem:=(others => '0');
+                id_regwriteback_ex:= (others => '0');
             ELSIF (mem_waiting = '1') THEN                  --if memory write or read then stall until complete
             
             --update register for execute stage to use and check for data hazards
@@ -198,16 +196,108 @@ BEGIN
                 id_ex_jaddress<=if_id_instruction(25 downto 0);
                 
                 --forwarding
-                if(to_integer(unsigned(if_id_instruction(25 downto 21)))=id_regwriteback_ex) then
-                    id_ex_forwardex<="01";
-                elsif (to_integer(unsigned(if_id_instruction(20 downto 16)))=id_regwriteback_ex) then
-                    id_ex_forwardex<="11";
+
+                --requires s
+                --ADD, ADDI, AND, ANDI, BEQ, BNE, DIV, JR, LW, MULT, OR, ORI, SLT, SLTI, SUB, SW, XOR, XORI, NOR    , for sw s is address and t is value
+                
+                --requires t
+                --ADD, AND, BEQ, BNE, DIV, MULT, OR, SLL, SLT, SRL, SRA, SUB, SW, XOR, NOR
+                
+                if(if_id_instruction(25 downto 21)=id_regwriteback_ex(5 downto 1)) then           --potential hazard in s
+                    --ADDI, ANDI, ORI, SLTI, XORI, LW, beq, bne, sw,    jr, mult, div, add, and, or, slt, sub, xor,  
+                    if ((if_id_instruction(31 downto 26)="001000")or (if_id_instruction(31 downto 26)="001100") or (if_id_instruction(31 downto 26)="100011") or 
+                        (if_id_instruction(31 downto 26)="001101")or (if_id_instruction(31 downto 26)="001010") or (if_id_instruction(31 downto 26)="100011") or 
+                        (if_id_instruction(31 downto 26)="000100")or (if_id_instruction(31 downto 26)="000101") or (if_id_instruction(31 downto 26)="101011") or 
+                        ((if_id_instruction(31 downto 26)="000000")and ((if_id_instruction(5 downto 0)="001000") or (if_id_instruction(5 downto 0)="011000") or
+                        (if_id_instruction(5 downto 0)="011010") or (if_id_instruction(5 downto 0)="100000") or (if_id_instruction(5 downto 0)="100100") or 
+                        (if_id_instruction(5 downto 0)="100101") or (if_id_instruction(5 downto 0)="101010") or (if_id_instruction(5 downto 0)="100010") or 
+                        (if_id_instruction(5 downto 0)="101000") or (if_id_instruction(5 downto 0)="100111")) )) then
+
+                        --modify signal
+                    else 
+                        --modify signal
+                    end if;
+                
+                elsif (if_id_instruction(25 downto 21)=id_regwriteback_mem(5 downto 1)) then
+                    if ((if_id_instruction(31 downto 26)="001000")or (if_id_instruction(31 downto 26)="001100") or (if_id_instruction(31 downto 26)="100011") or 
+                        (if_id_instruction(31 downto 26)="001101")or (if_id_instruction(31 downto 26)="001010") or (if_id_instruction(31 downto 26)="100011") or 
+                        (if_id_instruction(31 downto 26)="000100")or (if_id_instruction(31 downto 26)="000101") or (if_id_instruction(31 downto 26)="101011") or 
+                        ((if_id_instruction(31 downto 26)="000000")and ((if_id_instruction(5 downto 0)="001000") or (if_id_instruction(5 downto 0)="011000") or
+                        (if_id_instruction(5 downto 0)="011010") or (if_id_instruction(5 downto 0)="100000") or (if_id_instruction(5 downto 0)="100100") or 
+                        (if_id_instruction(5 downto 0)="100101") or (if_id_instruction(5 downto 0)="101010") or (if_id_instruction(5 downto 0)="100010") or 
+                        (if_id_instruction(5 downto 0)="101000") or (if_id_instruction(5 downto 0)="100111")) )) then
+
+                        --modify signal
+                    else 
+                        --modify signal
+                    end if;
                 else
-                    id_ex_forwardex<="00";
+                     --modify signal
                 end if;
 
+                if (if_id_instruction(20 downto 16)=id_regwriteback_ex(5 downto 1)) then       --potential hazard in t
+                    --beq, bne, sw,   mult, div, add, and, or, slt, sub, xor, nor, sll, srl, sra 
+                    if ((if_id_instruction(31 downto 26)="000100") or (if_id_instruction(31 downto 26)="000101") or (if_id_instruction(31 downto 26)="101011") or 
+                        ((if_id_instruction(31 downto 26)="000000")and ((if_id_instruction(5 downto 0)="011000") or (if_id_instruction(5 downto 0)="011010") or 
+                        (if_id_instruction(5 downto 0)="100000") or (if_id_instruction(5 downto 0)="100100") or (if_id_instruction(5 downto 0)="100101") or 
+                        (if_id_instruction(5 downto 0)="101010") or (if_id_instruction(5 downto 0)="100010") or (if_id_instruction(5 downto 0)="101000") or 
+                        (if_id_instruction(5 downto 0)="100111") or (if_id_instruction(5 downto 0)="000000") or (if_id_instruction(5 downto 0)="000010") or
+                        (if_id_instruction(5 downto 0)="000011")) )) then
+
+                        --modify signal
+                    else 
+                        --modify signal
+                    end if;
+                
+
+                elsif (if_id_instruction(20 downto 16)=id_regwriteback_mem(5 downto 1)) then
+                    if ((if_id_instruction(31 downto 26)="000100") or (if_id_instruction(31 downto 26)="000101") or (if_id_instruction(31 downto 26)="101011") or 
+                        ((if_id_instruction(31 downto 26)="000000")and ((if_id_instruction(5 downto 0)="011000") or (if_id_instruction(5 downto 0)="011010") or 
+                        (if_id_instruction(5 downto 0)="100000") or (if_id_instruction(5 downto 0)="100100") or (if_id_instruction(5 downto 0)="100101") or 
+                        (if_id_instruction(5 downto 0)="101010") or (if_id_instruction(5 downto 0)="100010") or (if_id_instruction(5 downto 0)="101000") or 
+                        (if_id_instruction(5 downto 0)="100111") or (if_id_instruction(5 downto 0)="000000") or (if_id_instruction(5 downto 0)="000010") or
+                        (if_id_instruction(5 downto 0)="000011")) )) then
+
+                        --modify signal
+                    else 
+                        --modify signal
+                    end if;
+                else 
+                    --modify signal
+                    --id_ex_forwarding <= (OTHERS => '0');
+                end if;
+                
+                --id_ex_forwarding  -- 'get s','from',for','get t', 'from', 'for', 31-27 are write back reg, 26 is replace in exe 0 or mem 1  
+                --ex_mem_forwarding  -- 31-27 are write back reg, 26 is replace in exe 0 or mem 1 
+
+
                 id_regwriteback_mem:=id_regwriteback_ex;
-                id_regwriteback_ex:=to_integer(unsigned(if_id_instruction(15 downto 11)));
+                
+                --writeback to t,       ADDI, ANDI, ORI, SLTI, XORI, LUI
+                if ((if_id_instruction(31 downto 26)="001000")or (if_id_instruction(31 downto 26)="001100") or (if_id_instruction(31 downto 26)="100011") or 
+                    (if_id_instruction(31 downto 26)="001101")or (if_id_instruction(31 downto 26)="001010") or (if_id_instruction(31 downto 26)="001111")) then
+
+                    id_regwriteback_ex (5 downto 1):=if_id_instruction(20 downto 16);
+                    id_regwriteback_ex (0):='0';
+                
+                --writeback to t and LW
+                elsif (if_id_instruction(31 downto 26)="100011") then
+                    id_regwriteback_ex (5 downto 1):=if_id_instruction(20 downto 16);
+                    id_regwriteback_ex (0):='1';
+
+                 --write back to d,      ADD, AND, MFHI, MFLO, OR, SLL, SLT, SRL, SRA, SUB, XOR, NOR
+                elsif ((if_id_instruction(31 downto 26)="000000") and (if_id_instruction(5 downto 0)/="001000") and (if_id_instruction(5 downto 0)/="011000") and
+                    (if_id_instruction(5 downto 0)/="011010")) then                              
+                    
+                    id_regwriteback_ex(5 downto 1) :=if_id_instruction(15 downto 11);
+                    id_regwriteback_ex (0):='0';
+
+                elsif (if_id_instruction(31 downto 26)="000011") then                             --write back to R31,    JAL 
+                    id_regwriteback_ex(5 downto 1):= "11111";
+                    id_regwriteback_ex (0):='0';
+                else
+                    id_regwriteback_ex:=(others => '0');
+                end if;
             
             else        --insert stall if fetch not yet complete
                 -- id_ex_pc<=program_counter;
@@ -228,7 +318,6 @@ BEGIN
             end if;
 
         end if;     
-
     END PROCESS;
 
     --execute commands 
