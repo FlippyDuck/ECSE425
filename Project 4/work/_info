@@ -21,9 +21,9 @@ VCTV?zYE;iRB:?4iMZ0K:22
 !s100 0N>Yh:AP6O0ZIOe[fg16A1
 Z7 OV;C;10.5b;63
 32
-Z8 !s110 1584137219
+Z8 !s110 1584244171
 !i10b 1
-Z9 !s108 1584137219.000000
+Z9 !s108 1584244170.000000
 Z10 !s90 -reportprogress|300|bmux.vhd|
 Z11 !s107 bmux.vhd|
 !i113 1
@@ -59,11 +59,11 @@ Vg^0CbI^lNXje]k7KCARIz0
 !s100 aAT4SH5jC`OUUQ@S6Pf^32
 R7
 32
-Z17 !s110 1584137216
+Z17 !s110 1584244170
 !i10b 1
-Z18 !s108 1584137215.000000
-Z19 !s90 -reportprogress|300|cache.vhd|
-Z20 !s107 cache.vhd|
+R9
+Z18 !s90 -reportprogress|300|cache.vhd|
+Z19 !s107 cache.vhd|
 !i113 1
 R12
 Aarch
@@ -79,9 +79,9 @@ R7
 32
 R17
 !i10b 1
+R9
 R18
 R19
-R20
 !i113 1
 R12
 Ememory
@@ -90,19 +90,19 @@ R14
 R2
 R3
 R4
-Z21 8memory.vhd
-Z22 Fmemory.vhd
+Z20 8memory.vhd
+Z21 Fmemory.vhd
 l0
 L6
 Vif>I=6PajYFom3<A@LFI=1
 !s100 TL`MNK5NTn0=f?i`Ph2JS3
 R7
 32
-Z23 !s110 1584137217
+R17
 !i10b 1
-Z24 !s108 1584137216.000000
-Z25 !s90 -reportprogress|300|memory.vhd|
-Z26 !s107 memory.vhd|
+R9
+Z22 !s90 -reportprogress|300|memory.vhd|
+Z23 !s107 memory.vhd|
 !i113 1
 R12
 Artl
@@ -116,11 +116,11 @@ VMCeSbh:K8F0DdV^Z3aEYl1
 !s100 eO4GG9KB^]m;m]0ioXWlk2
 R7
 32
-R23
+R17
 !i10b 1
-R24
-R25
-R26
+R9
+R22
+R23
 !i113 1
 R12
 Ppkg
@@ -129,8 +129,8 @@ R2
 R3
 w1583519158
 R0
-Z27 8processor.vhd
-Z28 Fprocessor.vhd
+Z24 8processor.vhd
+Z25 Fprocessor.vhd
 l0
 L5
 V6Gc=4740DS5SmKXK^nP:53
@@ -140,35 +140,35 @@ OP;C;10.4a;61
 !s110 1583519160
 !i10b 1
 !s108 1583519160.000000
-Z29 !s90 -reportprogress|300|processor.vhd|
-Z30 !s107 processor.vhd|
+Z26 !s90 -reportprogress|300|processor.vhd|
+Z27 !s107 processor.vhd|
 !i113 1
 o-O0
 tExplicit 1
 Eprocessor
-Z31 w1584137210
-Z32 DPx4 work 12 register_pkg 0 22 <[z@:jU^DK0:B@fVQDa4;2
+Z28 w1584137210
+Z29 DPx4 work 12 register_pkg 0 22 <[z@:jU^DK0:B@fVQDa4;2
 R14
 R2
 R3
 R4
-R27
-R28
+R24
+R25
 l0
 L14
 V=nO<[e1gkhUR7OV<B7;mM0
 !s100 >zBBNzL2nX`^hf@QHG93Q3
 R7
 32
-R23
+R17
 !i10b 1
-Z33 !s108 1584137217.000000
-R29
-R30
+R9
+R26
+R27
 !i113 1
 R12
 Aproc_arch
-R32
+R29
 R14
 R2
 R3
@@ -179,75 +179,75 @@ V;;_`LEm<0IZH=ig[>WFfz2
 !s100 9GWGI4<GdHijaOL4@GV?e0
 R7
 32
-Z34 !s110 1584137218
+R17
 !i10b 1
-R33
-R29
-R30
+R9
+R26
+R27
 !i113 1
 R12
 Eprocessor_tb
-Z35 w1584135601
-R32
-Z36 DPx4 ieee 16 std_logic_textio 0 22 V5TSK`;aJKC<l]CEg1>mz1
+Z30 w1584135601
+R29
+Z31 DPx4 ieee 16 std_logic_textio 0 22 V5TSK`;aJKC<l]CEg1>mz1
 R14
 R2
 R3
 R4
-Z37 8processor_tb.vhd
-Z38 Fprocessor_tb.vhd
+Z32 8processor_tb.vhd
+Z33 Fprocessor_tb.vhd
 l0
 L8
 VXfL^3Zc<mT7H<F3:Ao8im1
 !s100 P5nKoY[zNlV8VE5oV^J>M0
 R7
 32
-Z39 !s110 1584137220
+R8
 !i10b 1
-R9
-Z40 !s90 -reportprogress|300|processor_tb.vhd|
-Z41 !s107 processor_tb.vhd|
+Z34 !s108 1584244171.000000
+Z35 !s90 -reportprogress|300|processor_tb.vhd|
+Z36 !s107 processor_tb.vhd|
 !i113 1
 R12
 Abehavior
-R32
-R36
+R29
+R31
 R14
 R2
 R3
-Z42 DEx4 work 12 processor_tb 0 22 XfL^3Zc<mT7H<F3:Ao8im1
+Z37 DEx4 work 12 processor_tb 0 22 XfL^3Zc<mT7H<F3:Ao8im1
 l147
 L11
-Z43 Vi?d2Gm8Zb7<j3CkB@:S>n3
-Z44 !s100 N5c?:j1b:Km`PHizJZ94n1
+Z38 Vi?d2Gm8Zb7<j3CkB@:S>n3
+Z39 !s100 N5c?:j1b:Km`PHizJZ94n1
 R7
 32
-R39
+R8
 !i10b 1
-R9
-R40
-R41
+R34
+R35
+R36
 !i113 1
 R12
 Pregister_pkg
 R14
 R2
 R3
-R31
-R4
-R27
 R28
+R4
+R24
+R25
 l0
 L5
 V<[z@:jU^DK0:B@fVQDa4;2
 !s100 4z?ebKDlT>VXf4B]oDZE90
 R7
 32
-R23
+R17
 !i10b 1
-R33
-R29
-R30
+R9
+R26
+R27
 !i113 1
 R12
 Evmux
@@ -255,19 +255,19 @@ R1
 R2
 R3
 R4
-Z45 8vmux.vhd
-Z46 Fvmux.vhd
+Z40 8vmux.vhd
+Z41 Fvmux.vhd
 l0
 L4
 Vaha_h=nOULh@ImaHSBokR3
 !s100 Bzb9JWLKa_?dC50Z<W1dN3
 R7
 32
-R34
+R17
 !i10b 1
-Z47 !s108 1584137218.000000
-Z48 !s90 -reportprogress|300|vmux.vhd|
-Z49 !s107 vmux.vhd|
+R9
+Z42 !s90 -reportprogress|300|vmux.vhd|
+Z43 !s107 vmux.vhd|
 !i113 1
 R12
 Aarch
@@ -280,10 +280,10 @@ VMUW;j_Q[HRYfBlOLPj>=41
 !s100 0ZONF=Fg7E1Y@MSVAB8Vc1
 R7
 32
-R34
+R17
 !i10b 1
-R47
-R48
-R49
+R9
+R42
+R43
 !i113 1
 R12

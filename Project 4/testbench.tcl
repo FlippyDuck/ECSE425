@@ -28,7 +28,7 @@ proc AddWaves {} {
     ;#add wave -position end sim:/processor_tb/dc2m_writedata
     ;#add wave -position end sim:/processor_tb/m2dc_waitrequest
     add wave -position end sim:/processor_tb/dut/register_bank
-    add wave -position end sim:/processor_tb/incache/cache_data
+    ;#add wave -position end sim:/processor_tb/incache/cache_data
     ;#add wave -position end sim:/processor_tb/im_write
     ;#add wave -position end sim:/processor_tb/im_writedata
     ;#add wave -position end sim:/processor_tb/dm_read
