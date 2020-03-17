@@ -51,6 +51,7 @@ proc AddWaves {} {
     add wave -position end sim:/processor_tb/dut/mem_waiting
     add wave -position end sim:/processor_tb/dut/fetch_stall
     add wave -position end sim:/processor_tb/dut/decode_stall
+    add wave -position end sim:/processor_tb/dut/load_stall
     add wave -position end sim:/processor_tb/dut/execute_stall
     add wave -position end sim:/processor_tb/dut/branch_stall
     add wave -position end sim:/processor_tb/dut/memory_stall

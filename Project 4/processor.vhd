@@ -91,6 +91,7 @@ ARCHITECTURE proc_arch OF processor IS
     SIGNAL id_ex_forwarding :  std_logic_vector(5 downto 0);     -- 'hazard in s''ex_mem or mem_wr''empty for now' repeat for t  
     SIGNAL ex_mem_forwarding :  std_logic_vector(5 downto 0);    --uneeded unless account for writes 
     Signal id_repeat: std_logic;
+    Signal load_stall : std_logic;
     
 BEGIN
 
@@ -114,6 +115,7 @@ BEGIN
                 -- writeback_stall<='1';
                 -- count_rst<=4;
             ELSIF (mem_waiting = '1') THEN          --stall when waiting for mem
+            ELSIF (load_stall= '1') then
             ELSIF (fetch_stall='0') then
                 
                 CASE fetch_state IS
@@ -175,8 +177,10 @@ BEGIN
                 id_regwriteback_mem:=(others => '0');
                 id_regwriteback_ex:= (others => '0');
                 id_repeat<='0';
+                load_stall<='0';
             ELSIF (mem_waiting = '1') THEN                  --if memory write or read then stall until complete
-            
+            ELSIF (load_stall= '1') then
+                load_stall <= '0';
             --update register for execute stage to use and check for data hazards
             elsif (fetch_complete = '1' AND decode_stall = '0') then
                 execute_stall <= '0';
@@ -216,9 +220,15 @@ BEGIN
                         (if_id_instruction(5 downto 0)="011010") or (if_id_instruction(5 downto 0)="100000") or (if_id_instruction(5 downto 0)="100100") or 
                         (if_id_instruction(5 downto 0)="100101") or (if_id_instruction(5 downto 0)="101010") or (if_id_instruction(5 downto 0)="100010") or 
                         (if_id_instruction(5 downto 0)="101000") or (if_id_instruction(5 downto 0)="100111")) )) then
-
+                        if (id_regwriteback_ex(0)='1') then
+                            --load_stall<='1';
+                            id_ex_forwarding (5 downto 3) <= "000"; 
+                            id_ex_register_s<=mem_wb_writeback;
+                        else
+                            id_ex_forwarding (5 downto 3) <= "100";         --s hazard get from ex_mem
+                        end if;
                         --modify signal
-                        id_ex_forwarding (5 downto 3) <= "100";         --s hazard get from ex_mem
+                        --id_ex_forwarding (5 downto 3) <= "100";         --s hazard get from ex_mem
                     else 
                         --modify signal
                         id_ex_forwarding (5 downto 3) <= "000";
@@ -257,9 +267,15 @@ BEGIN
                         (if_id_instruction(5 downto 0)="101010") or (if_id_instruction(5 downto 0)="100010") or (if_id_instruction(5 downto 0)="101000") or 
                         (if_id_instruction(5 downto 0)="100111") or (if_id_instruction(5 downto 0)="000000") or (if_id_instruction(5 downto 0)="000010") or
                         (if_id_instruction(5 downto 0)="000011")) )) then
-
+                        if (id_regwriteback_ex(0)='1') then
+                            id_ex_forwarding (2 downto 0) <= "000";         --t hazard get from ex_mem
+                            id_ex_register_t<=mem_wb_writeback;
+                            --load_stall<='1';
+                        else
+                            id_ex_forwarding (2 downto 0) <= "100";         --t hazard get from ex_mem
+                        end if;
                         --modify signal
-                        id_ex_forwarding (2 downto 0) <= "100";         --t hazard get from ex_mem
+                        --id_ex_forwarding (2 downto 0) <= "100";         --t hazard get from ex_mem
                     else 
                         --modify signal
                         id_ex_forwarding (2 downto 0) <= "000";
@@ -295,14 +311,14 @@ BEGIN
                 id_regwriteback_mem:=id_regwriteback_ex;
                 if (id_repeat='0') then
                     --writeback to t,       ADDI, ANDI, ORI, SLTI, XORI, LUI
-                    if ((if_id_instruction(31 downto 26)="001000")or (if_id_instruction(31 downto 26)="001100") or (if_id_instruction(31 downto 26)="100011") or 
+                    if ((if_id_instruction(31 downto 26)="001000")or (if_id_instruction(31 downto 26)="001100") or (if_id_instruction(31 downto 26)="001110") or 
                         (if_id_instruction(31 downto 26)="001101")or (if_id_instruction(31 downto 26)="001010") or (if_id_instruction(31 downto 26)="001111")) then
 
                         id_regwriteback_ex (5 downto 1):=if_id_instruction(20 downto 16);
                         id_regwriteback_ex (0):='0';
                     
                     --writeback to t and LW
-                    elsif (if_id_instruction(31 downto 26)="100011") then
+                    elsif (if_id_instruction(31 downto 26)="100011") then 
                         id_regwriteback_ex (5 downto 1):=if_id_instruction(20 downto 16);
                         id_regwriteback_ex (0):='1';
 
@@ -363,7 +379,7 @@ BEGIN
                 ex_mem_opcode <= (others => '0');
                 --bcount :='0';
             ELSIF (mem_waiting = '1') THEN                      --if read or write then stall until done
-            
+            ELSIF (load_stall = '1') THEN      
             --this is used to flush instructions after a successful branch taken
             ELSIF (execute_stall = '0' AND branch_stall = '1') THEN 
                 if (bcount='1') then
