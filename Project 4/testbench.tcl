@@ -41,6 +41,8 @@ proc AddWaves {} {
     add wave -position end sim:/processor_tb/dut/id_ex_funct
     add wave -position end sim:/processor_tb/dut/id_ex_register_s
     add wave -position end sim:/processor_tb/dut/id_ex_register_t
+    add wave -position end sim:/processor_tb/dut/id_ex_forwarding
+    add wave -position end sim:/processor_tb/dut/id_repeat
     add wave -position end sim:/processor_tb/dut/ex_mem_aluresult
     add wave -position end sim:/processor_tb/dut/ex_mem_branchtaken
     add wave -position end sim:/processor_tb/dut/ex_mem_regvalue
@@ -54,7 +56,7 @@ proc AddWaves {} {
     add wave -position end sim:/processor_tb/dut/memory_stall
     add wave -position end sim:/processor_tb/dut/writeback_stall
     add wave -position end sim:/processor_tb/dut/memory_state
-    add wave -position end sim:/processor_tb/datcache/state
+    ;#add wave -position end sim:/processor_tb/datcache/state
 }
 
 vlib work

@@ -88,8 +88,9 @@ ARCHITECTURE proc_arch OF processor IS
     SIGNAL mem_waiting : std_logic;
 
     --for forwarding / hazard detection
-    SIGNAL id_ex_forwarding :  std_logic_vector(31 downto 0);     -- 31-27 are write back reg, 26 is replace in exe 0 or mem 1  
-    SIGNAL ex_mem_forwarding :  std_logic_vector(31 downto 0);     -- 31-27 are write back reg, 26 is replace in exe 0 or mem 1  
+    SIGNAL id_ex_forwarding :  std_logic_vector(5 downto 0);     -- 'hazard in s''ex_mem or mem_wr''empty for now' repeat for t  
+    SIGNAL ex_mem_forwarding :  std_logic_vector(5 downto 0);    --uneeded unless account for writes 
+    Signal id_repeat: std_logic;
     
 BEGIN
 
@@ -155,7 +156,7 @@ BEGIN
     
     variable id_regwriteback_ex: std_logic_vector (5 downto 0);     -- 5-1 is reg index and 0 is if load
     variable id_regwriteback_mem: std_logic_vector (5 downto 0);
-   
+    
     BEGIN
         IF (rising_edge(clock)) THEN 
             if (reset = '1') THEN
@@ -170,9 +171,10 @@ BEGIN
                 id_ex_register_d_index<=0;
                 
                 --forwading 
-                id_ex_forwardex<="00";
+                id_ex_forwarding<= (others => '0');
                 id_regwriteback_mem:=(others => '0');
                 id_regwriteback_ex:= (others => '0');
+                id_repeat<='0';
             ELSIF (mem_waiting = '1') THEN                  --if memory write or read then stall until complete
             
             --update register for execute stage to use and check for data hazards
@@ -202,10 +204,12 @@ BEGIN
                 
                 --requires t
                 --ADD, AND, BEQ, BNE, DIV, MULT, OR, SLL, SLT, SRL, SRA, SUB, SW, XOR, NOR
-                
+
                 if(if_id_instruction(25 downto 21)=id_regwriteback_ex(5 downto 1)) then           --potential hazard in s
+                    if (id_regwriteback_ex(5 downto 1)="00000") then                                --ignore non write backs
+                        id_ex_forwarding (5 downto 3) <= "000";
                     --ADDI, ANDI, ORI, SLTI, XORI, LW, beq, bne, sw,    jr, mult, div, add, and, or, slt, sub, xor,  
-                    if ((if_id_instruction(31 downto 26)="001000")or (if_id_instruction(31 downto 26)="001100") or (if_id_instruction(31 downto 26)="100011") or 
+                    elsif ((if_id_instruction(31 downto 26)="001000")or (if_id_instruction(31 downto 26)="001100") or (if_id_instruction(31 downto 26)="100011") or 
                         (if_id_instruction(31 downto 26)="001101")or (if_id_instruction(31 downto 26)="001010") or (if_id_instruction(31 downto 26)="100011") or 
                         (if_id_instruction(31 downto 26)="000100")or (if_id_instruction(31 downto 26)="000101") or (if_id_instruction(31 downto 26)="101011") or 
                         ((if_id_instruction(31 downto 26)="000000")and ((if_id_instruction(5 downto 0)="001000") or (if_id_instruction(5 downto 0)="011000") or
@@ -214,30 +218,40 @@ BEGIN
                         (if_id_instruction(5 downto 0)="101000") or (if_id_instruction(5 downto 0)="100111")) )) then
 
                         --modify signal
+                        id_ex_forwarding (5 downto 3) <= "100";         --s hazard get from ex_mem
                     else 
                         --modify signal
+                        id_ex_forwarding (5 downto 3) <= "000";
                     end if;
                 
-                elsif (if_id_instruction(25 downto 21)=id_regwriteback_mem(5 downto 1)) then
-                    if ((if_id_instruction(31 downto 26)="001000")or (if_id_instruction(31 downto 26)="001100") or (if_id_instruction(31 downto 26)="100011") or 
-                        (if_id_instruction(31 downto 26)="001101")or (if_id_instruction(31 downto 26)="001010") or (if_id_instruction(31 downto 26)="100011") or 
-                        (if_id_instruction(31 downto 26)="000100")or (if_id_instruction(31 downto 26)="000101") or (if_id_instruction(31 downto 26)="101011") or 
-                        ((if_id_instruction(31 downto 26)="000000")and ((if_id_instruction(5 downto 0)="001000") or (if_id_instruction(5 downto 0)="011000") or
-                        (if_id_instruction(5 downto 0)="011010") or (if_id_instruction(5 downto 0)="100000") or (if_id_instruction(5 downto 0)="100100") or 
-                        (if_id_instruction(5 downto 0)="100101") or (if_id_instruction(5 downto 0)="101010") or (if_id_instruction(5 downto 0)="100010") or 
-                        (if_id_instruction(5 downto 0)="101000") or (if_id_instruction(5 downto 0)="100111")) )) then
+                -- elsif (if_id_instruction(25 downto 21)=id_regwriteback_mem(5 downto 1)) then
+                --     if (id_regwriteback_mem(5 downto 1)="00000") then 
+                --         id_ex_forwarding (5 downto 3) <= "000";
+                --     elsif ((if_id_instruction(31 downto 26)="001000")or (if_id_instruction(31 downto 26)="001100") or (if_id_instruction(31 downto 26)="100011") or 
+                --         (if_id_instruction(31 downto 26)="001101")or (if_id_instruction(31 downto 26)="001010") or (if_id_instruction(31 downto 26)="100011") or 
+                --         (if_id_instruction(31 downto 26)="000100")or (if_id_instruction(31 downto 26)="000101") or (if_id_instruction(31 downto 26)="101011") or 
+                --         ((if_id_instruction(31 downto 26)="000000")and ((if_id_instruction(5 downto 0)="001000") or (if_id_instruction(5 downto 0)="011000") or
+                --         (if_id_instruction(5 downto 0)="011010") or (if_id_instruction(5 downto 0)="100000") or (if_id_instruction(5 downto 0)="100100") or 
+                --         (if_id_instruction(5 downto 0)="100101") or (if_id_instruction(5 downto 0)="101010") or (if_id_instruction(5 downto 0)="100010") or 
+                --         (if_id_instruction(5 downto 0)="101000") or (if_id_instruction(5 downto 0)="100111")) )) then
 
-                        --modify signal
-                    else 
-                        --modify signal
-                    end if;
+                --         --modify signal
+                --         id_ex_forwarding (5 downto 3) <= "110";     --s hazard get from mem_wr
+                --     else 
+                --         --modify signal
+                --         id_ex_forwarding (5 downto 3) <= "000";
+                --     end if;
                 else
                      --modify signal
+                    id_ex_forwarding (5 downto 3) <= "000";
                 end if;
 
                 if (if_id_instruction(20 downto 16)=id_regwriteback_ex(5 downto 1)) then       --potential hazard in t
+                    if (id_regwriteback_ex(5 downto 1)="00000") then 
+                        id_ex_forwarding (2 downto 0) <= "000";
+                
                     --beq, bne, sw,   mult, div, add, and, or, slt, sub, xor, nor, sll, srl, sra 
-                    if ((if_id_instruction(31 downto 26)="000100") or (if_id_instruction(31 downto 26)="000101") or (if_id_instruction(31 downto 26)="101011") or 
+                    elsif ((if_id_instruction(31 downto 26)="000100") or (if_id_instruction(31 downto 26)="000101") or (if_id_instruction(31 downto 26)="101011") or 
                         ((if_id_instruction(31 downto 26)="000000")and ((if_id_instruction(5 downto 0)="011000") or (if_id_instruction(5 downto 0)="011010") or 
                         (if_id_instruction(5 downto 0)="100000") or (if_id_instruction(5 downto 0)="100100") or (if_id_instruction(5 downto 0)="100101") or 
                         (if_id_instruction(5 downto 0)="101010") or (if_id_instruction(5 downto 0)="100010") or (if_id_instruction(5 downto 0)="101000") or 
@@ -245,26 +259,33 @@ BEGIN
                         (if_id_instruction(5 downto 0)="000011")) )) then
 
                         --modify signal
+                        id_ex_forwarding (2 downto 0) <= "100";         --t hazard get from ex_mem
                     else 
                         --modify signal
+                        id_ex_forwarding (2 downto 0) <= "000";
                     end if;
                 
 
-                elsif (if_id_instruction(20 downto 16)=id_regwriteback_mem(5 downto 1)) then
-                    if ((if_id_instruction(31 downto 26)="000100") or (if_id_instruction(31 downto 26)="000101") or (if_id_instruction(31 downto 26)="101011") or 
-                        ((if_id_instruction(31 downto 26)="000000")and ((if_id_instruction(5 downto 0)="011000") or (if_id_instruction(5 downto 0)="011010") or 
-                        (if_id_instruction(5 downto 0)="100000") or (if_id_instruction(5 downto 0)="100100") or (if_id_instruction(5 downto 0)="100101") or 
-                        (if_id_instruction(5 downto 0)="101010") or (if_id_instruction(5 downto 0)="100010") or (if_id_instruction(5 downto 0)="101000") or 
-                        (if_id_instruction(5 downto 0)="100111") or (if_id_instruction(5 downto 0)="000000") or (if_id_instruction(5 downto 0)="000010") or
-                        (if_id_instruction(5 downto 0)="000011")) )) then
+                -- elsif (if_id_instruction(20 downto 16)=id_regwriteback_mem(5 downto 1)) then
+                --     if (id_regwriteback_mem(5 downto 1)="00000") then 
+                --         id_ex_forwarding (2 downto 0) <= "000";
+                    
+                --     elsif ((if_id_instruction(31 downto 26)="000100") or (if_id_instruction(31 downto 26)="000101") or (if_id_instruction(31 downto 26)="101011") or 
+                --         ((if_id_instruction(31 downto 26)="000000")and ((if_id_instruction(5 downto 0)="011000") or (if_id_instruction(5 downto 0)="011010") or 
+                --         (if_id_instruction(5 downto 0)="100000") or (if_id_instruction(5 downto 0)="100100") or (if_id_instruction(5 downto 0)="100101") or 
+                --         (if_id_instruction(5 downto 0)="101010") or (if_id_instruction(5 downto 0)="100010") or (if_id_instruction(5 downto 0)="101000") or 
+                --         (if_id_instruction(5 downto 0)="100111") or (if_id_instruction(5 downto 0)="000000") or (if_id_instruction(5 downto 0)="000010") or
+                --         (if_id_instruction(5 downto 0)="000011")) )) then
 
-                        --modify signal
-                    else 
-                        --modify signal
-                    end if;
+                --         --modify signal
+                --         id_ex_forwarding (2 downto 0) <= "110";         --t hazard get from mem_wr
+                --     else 
+                --         id_ex_forwarding (2 downto 0) <= "000";
+                --         --modify signal
+                --     end if;
                 else 
                     --modify signal
-                    --id_ex_forwarding <= (OTHERS => '0');
+                    id_ex_forwarding (2 downto 0) <= "000";
                 end if;
                 
                 --id_ex_forwarding  -- 'get s','from',for','get t', 'from', 'for', 31-27 are write back reg, 26 is replace in exe 0 or mem 1  
@@ -272,32 +293,34 @@ BEGIN
 
 
                 id_regwriteback_mem:=id_regwriteback_ex;
-                
-                --writeback to t,       ADDI, ANDI, ORI, SLTI, XORI, LUI
-                if ((if_id_instruction(31 downto 26)="001000")or (if_id_instruction(31 downto 26)="001100") or (if_id_instruction(31 downto 26)="100011") or 
-                    (if_id_instruction(31 downto 26)="001101")or (if_id_instruction(31 downto 26)="001010") or (if_id_instruction(31 downto 26)="001111")) then
+                if (id_repeat='0') then
+                    --writeback to t,       ADDI, ANDI, ORI, SLTI, XORI, LUI
+                    if ((if_id_instruction(31 downto 26)="001000")or (if_id_instruction(31 downto 26)="001100") or (if_id_instruction(31 downto 26)="100011") or 
+                        (if_id_instruction(31 downto 26)="001101")or (if_id_instruction(31 downto 26)="001010") or (if_id_instruction(31 downto 26)="001111")) then
 
-                    id_regwriteback_ex (5 downto 1):=if_id_instruction(20 downto 16);
-                    id_regwriteback_ex (0):='0';
-                
-                --writeback to t and LW
-                elsif (if_id_instruction(31 downto 26)="100011") then
-                    id_regwriteback_ex (5 downto 1):=if_id_instruction(20 downto 16);
-                    id_regwriteback_ex (0):='1';
-
-                 --write back to d,      ADD, AND, MFHI, MFLO, OR, SLL, SLT, SRL, SRA, SUB, XOR, NOR
-                elsif ((if_id_instruction(31 downto 26)="000000") and (if_id_instruction(5 downto 0)/="001000") and (if_id_instruction(5 downto 0)/="011000") and
-                    (if_id_instruction(5 downto 0)/="011010")) then                              
+                        id_regwriteback_ex (5 downto 1):=if_id_instruction(20 downto 16);
+                        id_regwriteback_ex (0):='0';
                     
-                    id_regwriteback_ex(5 downto 1) :=if_id_instruction(15 downto 11);
-                    id_regwriteback_ex (0):='0';
+                    --writeback to t and LW
+                    elsif (if_id_instruction(31 downto 26)="100011") then
+                        id_regwriteback_ex (5 downto 1):=if_id_instruction(20 downto 16);
+                        id_regwriteback_ex (0):='1';
 
-                elsif (if_id_instruction(31 downto 26)="000011") then                             --write back to R31,    JAL 
-                    id_regwriteback_ex(5 downto 1):= "11111";
-                    id_regwriteback_ex (0):='0';
-                else
-                    id_regwriteback_ex:=(others => '0');
+                    --write back to d,      ADD, AND, MFHI, MFLO, OR, SLL, SLT, SRL, SRA, SUB, XOR, NOR
+                    elsif ((if_id_instruction(31 downto 26)="000000") and (if_id_instruction(5 downto 0)/="001000") and (if_id_instruction(5 downto 0)/="011000") and
+                        (if_id_instruction(5 downto 0)/="011010")) then                              
+                        
+                        id_regwriteback_ex(5 downto 1) :=if_id_instruction(15 downto 11);
+                        id_regwriteback_ex (0):='0';
+
+                    elsif (if_id_instruction(31 downto 26)="000011") then                             --write back to R31,    JAL 
+                        id_regwriteback_ex(5 downto 1):= "11111";
+                        id_regwriteback_ex (0):='0';
+                    else
+                        id_regwriteback_ex:=(others => '0');
+                    end if;
                 end if;
+                id_repeat<='1';
             
             else        --insert stall if fetch not yet complete
                 -- id_ex_pc<=program_counter;
@@ -315,6 +338,7 @@ BEGIN
                 -- id_regwriteback_mem:=id_regwriteback_ex;
                 -- id_regwriteback_ex:=0;
                 execute_stall <= '1';
+                id_repeat<='0';
             end if;
 
         end if;     
@@ -359,25 +383,52 @@ BEGIN
                 WHEN "000000" =>
                     CASE id_ex_funct IS
                     WHEN "000000" => -- sll
-                        ex_mem_aluresult <= std_logic_vector(shift_left(unsigned(id_ex_register_t), to_integer(unsigned(id_ex_shamt))));
+                        if (id_ex_forwarding(2 downto 0)="100") then
+                            ex_mem_aluresult <= std_logic_vector(shift_left(unsigned(ex_mem_aluresult), to_integer(unsigned(id_ex_shamt))));
+                        elsif (id_ex_forwarding(2 downto 0)="110") then
+                            ex_mem_aluresult <= std_logic_vector(shift_left(unsigned(mem_wb_writeback), to_integer(unsigned(id_ex_shamt))));
+                        else 
+                            ex_mem_aluresult <= std_logic_vector(shift_left(unsigned(id_ex_register_t), to_integer(unsigned(id_ex_shamt))));
+                        end if;
                         ex_mem_branchtaken <= '0';
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= id_ex_register_d_index;
                         ex_mem_isWriteback <= '1';
                     WHEN "000010" => -- srl
-                        ex_mem_aluresult <= std_logic_vector(shift_right(unsigned(id_ex_register_t), to_integer(unsigned(id_ex_shamt))));
+                        if (id_ex_forwarding(2 downto 0)="100") then
+                            ex_mem_aluresult <= std_logic_vector(shift_right(unsigned(ex_mem_aluresult), to_integer(unsigned(id_ex_shamt))));
+                        elsif (id_ex_forwarding(2 downto 0)="110") then
+                            ex_mem_aluresult <= std_logic_vector(shift_right(unsigned(mem_wb_writeback), to_integer(unsigned(id_ex_shamt))));
+                        else 
+                            ex_mem_aluresult <= std_logic_vector(shift_right(unsigned(id_ex_register_t), to_integer(unsigned(id_ex_shamt))));
+                        end if;
+                        
                         ex_mem_branchtaken <= '0';
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= id_ex_register_d_index;
                         ex_mem_isWriteback <= '1';
                     WHEN "000011" => -- sra
-                        ex_mem_aluresult <= std_logic_vector(shift_right(signed(id_ex_register_t), to_integer(unsigned(id_ex_shamt))));
+                        if (id_ex_forwarding(2 downto 0)="100") then
+                            ex_mem_aluresult <= std_logic_vector(shift_right(signed(ex_mem_aluresult), to_integer(unsigned(id_ex_shamt))));
+                        elsif (id_ex_forwarding(2 downto 0)="110") then
+                            ex_mem_aluresult <= std_logic_vector(shift_right(signed(mem_wb_writeback), to_integer(unsigned(id_ex_shamt))));
+                        else 
+                            ex_mem_aluresult <= std_logic_vector(shift_right(signed(id_ex_register_t), to_integer(unsigned(id_ex_shamt))));
+                        end if;
+                        
                         ex_mem_branchtaken <= '0';
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= id_ex_register_d_index;
                         ex_mem_isWriteback <= '1';
                     WHEN "001000" => -- jr
-                        ex_mem_aluresult <= id_ex_register_s;
+                        if (id_ex_forwarding(5 downto 3)="100") then
+                            ex_mem_aluresult <= ex_mem_aluresult;
+                        elsif (id_ex_forwarding(5 downto 3)="110") then
+                            ex_mem_aluresult <= mem_wb_writeback;
+                        else 
+                            ex_mem_aluresult <= id_ex_register_s;
+                        end if;
+
                         ex_mem_branchtaken <= '1';
                         branch_stall<= '1';
                         bcount :='0';
@@ -397,63 +448,284 @@ BEGIN
                         ex_mem_writebackreg <= id_ex_register_d_index;
                         ex_mem_isWriteback <= '1';
                     WHEN "011000" => -- mult
-                        ex_mem_aluresult <= (others => '0');
-                        ex_mem_branchtaken <= '0';
-                        mult_result := std_logic_vector(signed(id_ex_register_s) * signed(id_ex_register_t));
+                        if (id_ex_forwarding="100000") then             --replace s from ex
+                            mult_result := std_logic_vector(signed(ex_mem_aluresult) * signed(id_ex_register_t));
+                        elsif (id_ex_forwarding="110000") then          --replace s from mem
+                            mult_result := std_logic_vector(signed(mem_wb_writeback) * signed(id_ex_register_t));
+                        elsif (id_ex_forwarding="000100") then          --replace t from ex
+                            mult_result := std_logic_vector(signed(id_ex_register_s) * signed(ex_mem_aluresult));
+                        elsif (id_ex_forwarding="000110") then          --replace t from mem
+                            mult_result := std_logic_vector(signed(id_ex_register_s) * signed(mem_wb_writeback));
+                        elsif (id_ex_forwarding="100100") then           --replace s and t from ex
+                            mult_result := std_logic_vector(signed(ex_mem_aluresult) * signed(ex_mem_aluresult));
+                        elsif (id_ex_forwarding="110110") then           --replace s and t from mem
+                            mult_result := std_logic_vector(signed(mem_wb_writeback) * signed(mem_wb_writeback));
+                        elsif (id_ex_forwarding="100110") then           --replace s from ex and t from mem
+                            mult_result := std_logic_vector(signed(ex_mem_aluresult) * signed(mem_wb_writeback)); 
+                        elsif (id_ex_forwarding="110100") then           --replace s from mem and t from ex
+                            mult_result := std_logic_vector(signed(mem_wb_writeback) * signed(ex_mem_aluresult)); 
+                        else 
+                            mult_result := std_logic_vector(signed(id_ex_register_s) * signed(id_ex_register_t));
+                        end if;
                         register_HI <= mult_result(63 DOWNTO 32);
                         register_LO <= mult_result(31 DOWNTO 0);
+                        ex_mem_aluresult <= (others => '0');
+                        ex_mem_branchtaken <= '0';
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= 0;
                         ex_mem_isWriteback <= '0';
                     WHEN "011010" => -- div
+                        if (id_ex_forwarding="100000") then             --replace s from ex
+                            register_HI <= std_logic_vector(signed(ex_mem_aluresult) mod signed(id_ex_register_t));
+                            register_LO <= std_logic_vector(signed(ex_mem_aluresult) / signed(id_ex_register_t)); 
+                        elsif (id_ex_forwarding="110000") then          --replace s from mem
+                            register_HI <= std_logic_vector(signed(mem_wb_writeback) mod signed(id_ex_register_t));
+                            register_LO <= std_logic_vector(signed(mem_wb_writeback) / signed(id_ex_register_t)); 
+                        elsif (id_ex_forwarding="000100") then          --replace t from ex
+                            register_HI <= std_logic_vector(signed(id_ex_register_s) mod signed(ex_mem_aluresult));
+                            register_LO <= std_logic_vector(signed(id_ex_register_s) / signed(ex_mem_aluresult)); 
+                        elsif (id_ex_forwarding="000110") then          --replace t from mem
+                            register_HI <= std_logic_vector(signed(id_ex_register_s) mod signed(mem_wb_writeback));
+                            register_LO <= std_logic_vector(signed(id_ex_register_s) / signed(mem_wb_writeback)); 
+                        elsif (id_ex_forwarding="100100") then           --replace s and t from ex
+                            register_HI <= std_logic_vector(signed(ex_mem_aluresult) mod signed(ex_mem_aluresult));
+                            register_LO <= std_logic_vector(signed(ex_mem_aluresult) / signed(ex_mem_aluresult)); 
+                        elsif (id_ex_forwarding="110110") then           --replace s and t from mem
+                            register_HI <= std_logic_vector(signed(mem_wb_writeback) mod signed(mem_wb_writeback));
+                            register_LO <= std_logic_vector(signed(mem_wb_writeback) / signed(mem_wb_writeback)); 
+                        elsif (id_ex_forwarding="100110") then           --replace s from ex and t from mem
+                            register_HI <= std_logic_vector(signed(ex_mem_aluresult) mod signed(mem_wb_writeback));
+                            register_LO <= std_logic_vector(signed(ex_mem_aluresult) / signed(mem_wb_writeback)); 
+                        elsif (id_ex_forwarding="110100") then           --replace s from mem and t from ex
+                            register_HI <= std_logic_vector(signed(mem_wb_writeback) mod signed(ex_mem_aluresult));
+                            register_LO <= std_logic_vector(signed(mem_wb_writeback) / signed(ex_mem_aluresult));
+                        else 
+                            register_HI <= std_logic_vector(signed(id_ex_register_s) mod signed(id_ex_register_t));
+                            register_LO <= std_logic_vector(signed(id_ex_register_s) / signed(id_ex_register_t));
+                        end if;
+
                         ex_mem_aluresult <= (others => '0');
                         ex_mem_branchtaken <= '0';
-                        register_HI <= std_logic_vector(signed(id_ex_register_s) mod signed(id_ex_register_t));
-                        register_LO <= std_logic_vector(signed(id_ex_register_s) / signed(id_ex_register_t));
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= 0;
                         ex_mem_isWriteback <= '0';
                     WHEN "100000" => -- add
-                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) + signed(id_ex_register_t));
+                        if (id_ex_forwarding="100000") then             --replace s from ex
+                            ex_mem_aluresult <= std_logic_vector(signed(ex_mem_aluresult) + signed(id_ex_register_t));
+                        elsif (id_ex_forwarding="110000") then          --replace s from mem
+                            ex_mem_aluresult <= std_logic_vector(signed(mem_wb_writeback) + signed(id_ex_register_t)); 
+                        elsif (id_ex_forwarding="000100") then          --replace t from ex
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) + signed(ex_mem_aluresult)); 
+                        elsif (id_ex_forwarding="000110") then          --replace t from mem
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) + signed(mem_wb_writeback)); 
+                        elsif (id_ex_forwarding="100100") then           --replace s and t from ex
+                            ex_mem_aluresult <= std_logic_vector(signed(ex_mem_aluresult) + signed(ex_mem_aluresult)); 
+                        elsif (id_ex_forwarding="110110") then           --replace s and t from mem
+                            ex_mem_aluresult <= std_logic_vector(signed(mem_wb_writeback) + signed(mem_wb_writeback)); 
+                        elsif (id_ex_forwarding="100110") then           --replace s from ex and t from mem
+                            ex_mem_aluresult <= std_logic_vector(signed(ex_mem_aluresult) + signed(mem_wb_writeback));
+                        elsif (id_ex_forwarding="110100") then           --replace s from mem and t from ex
+                            ex_mem_aluresult <= std_logic_vector(signed(mem_wb_writeback) + signed(ex_mem_aluresult));
+                        else 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) + signed(id_ex_register_t));
+                        end if;
+
                         ex_mem_branchtaken <= '0';
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= id_ex_register_d_index;
                         ex_mem_isWriteback <= '1';
                     WHEN "100010" => -- sub
-                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) - signed(id_ex_register_t));
+                        if (id_ex_forwarding="100000") then             --replace s from ex
+                            ex_mem_aluresult <= std_logic_vector(signed(ex_mem_aluresult) - signed(id_ex_register_t));
+                        elsif (id_ex_forwarding="110000") then          --replace s from mem
+                            ex_mem_aluresult <= std_logic_vector(signed(mem_wb_writeback) - signed(id_ex_register_t)); 
+                        elsif (id_ex_forwarding="000100") then          --replace t from ex
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) - signed(ex_mem_aluresult)); 
+                        elsif (id_ex_forwarding="000110") then          --replace t from mem
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) - signed(mem_wb_writeback)); 
+                        elsif (id_ex_forwarding="100100") then           --replace s and t from ex
+                            ex_mem_aluresult <= std_logic_vector(signed(ex_mem_aluresult) - signed(ex_mem_aluresult)); 
+                        elsif (id_ex_forwarding="110110") then           --replace s and t from mem
+                            ex_mem_aluresult <= std_logic_vector(signed(mem_wb_writeback) - signed(mem_wb_writeback)); 
+                        elsif (id_ex_forwarding="100110") then           --replace s from ex and t from mem
+                            ex_mem_aluresult <= std_logic_vector(signed(ex_mem_aluresult) - signed(mem_wb_writeback));
+                        elsif (id_ex_forwarding="110100") then           --replace s from mem and t from ex
+                            ex_mem_aluresult <= std_logic_vector(signed(mem_wb_writeback) - signed(ex_mem_aluresult));
+                        else 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) - signed(id_ex_register_t));
+                        end if;
+                        
                         ex_mem_branchtaken <= '0';
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= id_ex_register_d_index;
                         ex_mem_isWriteback <= '1';
                     WHEN "100100" => -- and
-                        ex_mem_aluresult <= id_ex_register_s AND id_ex_register_t;
+                        if (id_ex_forwarding="100000") then             --replace s from ex
+                            ex_mem_aluresult <= ex_mem_aluresult AND id_ex_register_t;
+                        elsif (id_ex_forwarding="110000") then          --replace s from mem
+                            ex_mem_aluresult <= mem_wb_writeback AND id_ex_register_t;
+                        elsif (id_ex_forwarding="000100") then          --replace t from ex
+                            ex_mem_aluresult <= id_ex_register_s AND ex_mem_aluresult;
+                        elsif (id_ex_forwarding="000110") then          --replace t from mem
+                            ex_mem_aluresult <= id_ex_register_s AND mem_wb_writeback; 
+                        elsif (id_ex_forwarding="100100") then           --replace s and t from ex
+                            ex_mem_aluresult <= ex_mem_aluresult AND ex_mem_aluresult; 
+                        elsif (id_ex_forwarding="110110") then           --replace s and t from mem
+                            ex_mem_aluresult <= mem_wb_writeback AND mem_wb_writeback;
+                        elsif (id_ex_forwarding="100110") then           --replace s from ex and t from mem
+                            ex_mem_aluresult <= ex_mem_aluresult AND mem_wb_writeback;
+                        elsif (id_ex_forwarding="110100") then           --replace s from mem and t from ex
+                            ex_mem_aluresult <= mem_wb_writeback AND ex_mem_aluresult;
+                        else 
+                            ex_mem_aluresult <= id_ex_register_s AND id_ex_register_t;
+                        end if;
+
                         ex_mem_branchtaken <= '0';
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= id_ex_register_d_index;
                         ex_mem_isWriteback <= '1';
                     WHEN "100101" => -- or
-                        ex_mem_aluresult <= id_ex_register_s OR id_ex_register_t;
+                        if (id_ex_forwarding="100000") then             --replace s from ex
+                            ex_mem_aluresult <= ex_mem_aluresult OR id_ex_register_t;
+                        elsif (id_ex_forwarding="110000") then          --replace s from mem
+                            ex_mem_aluresult <= mem_wb_writeback OR id_ex_register_t;
+                        elsif (id_ex_forwarding="000100") then          --replace t from ex
+                            ex_mem_aluresult <= id_ex_register_s OR ex_mem_aluresult;
+                        elsif (id_ex_forwarding="000110") then          --replace t from mem
+                            ex_mem_aluresult <= id_ex_register_s OR mem_wb_writeback; 
+                        elsif (id_ex_forwarding="100100") then           --replace s and t from ex
+                            ex_mem_aluresult <= ex_mem_aluresult OR ex_mem_aluresult; 
+                        elsif (id_ex_forwarding="110110") then           --replace s and t from mem
+                            ex_mem_aluresult <= mem_wb_writeback OR mem_wb_writeback;
+                        elsif (id_ex_forwarding="100110") then           --replace s from ex and t from mem
+                            ex_mem_aluresult <= ex_mem_aluresult OR mem_wb_writeback;
+                        elsif (id_ex_forwarding="110100") then           --replace s from mem and t from ex
+                            ex_mem_aluresult <= mem_wb_writeback OR ex_mem_aluresult;
+                        else 
+                            ex_mem_aluresult <= id_ex_register_s OR id_ex_register_t;
+                        end if;
+
                         ex_mem_branchtaken <= '0';
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= id_ex_register_d_index;
                         ex_mem_isWriteback <= '1';
                     WHEN "101000" => -- xor                                                 --assembler error should be 100110
-                        ex_mem_aluresult <= id_ex_register_s xor id_ex_register_t;
+                        if (id_ex_forwarding="100000") then             --replace s from ex
+                            ex_mem_aluresult <= ex_mem_aluresult xor id_ex_register_t;
+                        elsif (id_ex_forwarding="110000") then          --replace s from mem
+                            ex_mem_aluresult <= mem_wb_writeback xor id_ex_register_t;
+                        elsif (id_ex_forwarding="000100") then          --replace t from ex
+                            ex_mem_aluresult <= id_ex_register_s xor ex_mem_aluresult;
+                        elsif (id_ex_forwarding="000110") then          --replace t from mem
+                            ex_mem_aluresult <= id_ex_register_s xor mem_wb_writeback; 
+                        elsif (id_ex_forwarding="100100") then           --replace s and t from ex
+                            ex_mem_aluresult <= ex_mem_aluresult xor ex_mem_aluresult; 
+                        elsif (id_ex_forwarding="110110") then           --replace s and t from mem
+                            ex_mem_aluresult <= mem_wb_writeback xor mem_wb_writeback;
+                        elsif (id_ex_forwarding="100110") then           --replace s from ex and t from mem
+                            ex_mem_aluresult <= ex_mem_aluresult xor mem_wb_writeback;
+                        elsif (id_ex_forwarding="110100") then           --replace s from mem and t from ex
+                            ex_mem_aluresult <= mem_wb_writeback xor ex_mem_aluresult;
+                        else 
+                            ex_mem_aluresult <= id_ex_register_s xor id_ex_register_t;
+                        end if;
+
                         ex_mem_branchtaken <= '0';
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= id_ex_register_d_index;
                         ex_mem_isWriteback <= '1';
                     WHEN "100111" => -- nor
-                        ex_mem_aluresult <= id_ex_register_s NOR id_ex_register_t;
+                        if (id_ex_forwarding="100000") then             --replace s from ex
+                            ex_mem_aluresult <= ex_mem_aluresult NOR id_ex_register_t;
+                        elsif (id_ex_forwarding="110000") then          --replace s from mem
+                            ex_mem_aluresult <= mem_wb_writeback NOR id_ex_register_t;
+                        elsif (id_ex_forwarding="000100") then          --replace t from ex
+                            ex_mem_aluresult <= id_ex_register_s NOR ex_mem_aluresult;
+                        elsif (id_ex_forwarding="000110") then          --replace t from mem
+                            ex_mem_aluresult <= id_ex_register_s NOR mem_wb_writeback; 
+                        elsif (id_ex_forwarding="100100") then           --replace s and t from ex
+                            ex_mem_aluresult <= ex_mem_aluresult NOR ex_mem_aluresult; 
+                        elsif (id_ex_forwarding="110110") then           --replace s and t from mem
+                            ex_mem_aluresult <= mem_wb_writeback NOR mem_wb_writeback;
+                        elsif (id_ex_forwarding="100110") then           --replace s from ex and t from mem
+                            ex_mem_aluresult <= ex_mem_aluresult NOR mem_wb_writeback;
+                        elsif (id_ex_forwarding="110100") then           --replace s from mem and t from ex
+                            ex_mem_aluresult <= mem_wb_writeback NOR ex_mem_aluresult;
+                        else 
+                            ex_mem_aluresult <= id_ex_register_s NOR id_ex_register_t;
+                        end if;
+                        
                         ex_mem_branchtaken <= '0';
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= id_ex_register_d_index;
                         ex_mem_isWriteback <= '1';
                     WHEN "101010" => -- slt
-                        ex_mem_aluresult <= (others => '0');
-                        IF (signed(id_ex_register_s) < signed(id_ex_register_t)) THEN 
-                            ex_mem_aluresult(0) <= '1';
-                        END IF;
+                        if (id_ex_forwarding="100000") then             --replace s from ex
+                            IF (signed(ex_mem_aluresult) < signed(id_ex_register_t)) THEN 
+                                ex_mem_aluresult <= (others => '0');
+                                ex_mem_aluresult(0) <= '1';
+                            else 
+                                ex_mem_aluresult <= (others => '0');
+                            END IF;
+                        elsif (id_ex_forwarding="110000") then          --replace s from mem
+                            IF (signed(mem_wb_writeback) < signed(id_ex_register_t)) THEN 
+                                ex_mem_aluresult <= (others => '0');
+                                ex_mem_aluresult(0) <= '1';
+                            else 
+                                ex_mem_aluresult <= (others => '0');
+                            END IF;
+                        elsif (id_ex_forwarding="000100") then          --replace t from ex
+                            IF (signed(id_ex_register_s) < signed(ex_mem_aluresult)) THEN 
+                                ex_mem_aluresult <= (others => '0');
+                                ex_mem_aluresult(0) <= '1';
+                            else 
+                                ex_mem_aluresult <= (others => '0');
+                            END IF;
+                        elsif (id_ex_forwarding="000110") then          --replace t from mem
+                            IF (signed(id_ex_register_s) < signed(mem_wb_writeback)) THEN 
+                                ex_mem_aluresult <= (others => '0');
+                                ex_mem_aluresult(0) <= '1';
+                            else 
+                                ex_mem_aluresult <= (others => '0');
+                            END IF;
+                        elsif (id_ex_forwarding="100100") then           --replace s and t from ex
+                            IF (signed(ex_mem_aluresult) < signed(ex_mem_aluresult)) THEN 
+                                ex_mem_aluresult <= (others => '0');
+                                ex_mem_aluresult(0) <= '1';
+                            else 
+                                ex_mem_aluresult <= (others => '0');
+                            END IF;
+                        elsif (id_ex_forwarding="110110") then           --replace s and t from mem
+                            IF (signed(mem_wb_writeback) < signed(mem_wb_writeback)) THEN 
+                                ex_mem_aluresult <= (others => '0');
+                                ex_mem_aluresult(0) <= '1';
+                            else 
+                                ex_mem_aluresult <= (others => '0');
+                            END IF;
+                        elsif (id_ex_forwarding="100110") then           --replace s from ex and t from mem
+                            IF (signed(ex_mem_aluresult) < signed(mem_wb_writeback)) THEN 
+                                ex_mem_aluresult <= (others => '0');
+                                ex_mem_aluresult(0) <= '1';
+                            else 
+                                ex_mem_aluresult <= (others => '0');
+                            END IF;
+                        elsif (id_ex_forwarding="110100") then           --replace s from mem and t from ex
+                            IF (signed(mem_wb_writeback) < signed(ex_mem_aluresult)) THEN 
+                                ex_mem_aluresult <= (others => '0');
+                                ex_mem_aluresult(0) <= '1';
+                            else 
+                                ex_mem_aluresult <= (others => '0');
+                            END IF;
+                        else 
+                            IF (signed(id_ex_register_s) < signed(id_ex_register_t)) THEN 
+                                ex_mem_aluresult <= (others => '0');
+                                ex_mem_aluresult(0) <= '1';
+                            else 
+                                ex_mem_aluresult <= (others => '0');
+                            END IF;
+                        end if;
+
+
                         ex_mem_branchtaken <= '0';
                         ex_mem_regvalue <= (others => '0');
                         ex_mem_writebackreg <= id_ex_register_d_index;
@@ -485,63 +757,309 @@ BEGIN
                     ex_mem_isWriteback <= '1';
                     -- register_bank(31) <= std_logic_vector(unsigned(id_ex_pc) + to_unsigned(8, 32));
                 WHEN "000100" => -- beq
-                    IF (id_ex_register_s = id_ex_register_t) THEN 
-                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
-                        ex_mem_branchtaken <= '1';
-                        branch_stall<= '1';
-                        bcount :='0';
-                        -- execute_stall <= '1';
-                    ELSE
-                        ex_mem_aluresult <= (others => '0');
-                        ex_mem_branchtaken <= '0';
-                        branch_stall <= '0';
-                    END IF;
+                    if (id_ex_forwarding="100000") then             --replace s from ex
+                        IF (ex_mem_aluresult = id_ex_register_t) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    elsif (id_ex_forwarding="110000") then          --replace s from mem
+                        IF (mem_wb_writeback = id_ex_register_t) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    elsif (id_ex_forwarding="000100") then          --replace t from ex
+                        IF (id_ex_register_s = ex_mem_aluresult) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    elsif (id_ex_forwarding="000110") then          --replace t from mem
+                        IF (id_ex_register_s = mem_wb_writeback) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    elsif (id_ex_forwarding="100100") then           --replace s and t from ex
+                        IF (ex_mem_aluresult = ex_mem_aluresult) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    elsif (id_ex_forwarding="110110") then           --replace s and t from mem
+                        IF (mem_wb_writeback = mem_wb_writeback) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    elsif (id_ex_forwarding="100110") then           --replace s from ex and t from mem
+                        IF (ex_mem_aluresult = mem_wb_writeback) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    elsif (id_ex_forwarding="110100") then           --replace s from mem and t from ex
+                        IF (mem_wb_writeback = ex_mem_aluresult) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    else 
+                        IF (id_ex_register_s = id_ex_register_t) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    end if;
+
                     ex_mem_regvalue <= (others  => '0');
                     ex_mem_writebackreg <= 0;
                     ex_mem_isWriteback <= '0';
                 WHEN "000101" => -- bne
-                    IF (id_ex_register_s /= id_ex_register_t) THEN 
-                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign),2));     
-                        ex_mem_branchtaken <= '1';
-                        branch_stall <= '1';
-                        bcount := '0';
-                    ELSE
-                        ex_mem_aluresult <= (others => '0');
-                        ex_mem_branchtaken <= '0';
-                        branch_stall <= '0';
-                    END IF;
+                    if (id_ex_forwarding="100000") then             --replace s from ex
+                        IF (ex_mem_aluresult /= id_ex_register_t) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    elsif (id_ex_forwarding="110000") then          --replace s from mem
+                        IF (mem_wb_writeback /= id_ex_register_t) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    elsif (id_ex_forwarding="000100") then          --replace t from ex
+                        IF (id_ex_register_s /= ex_mem_aluresult) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    elsif (id_ex_forwarding="000110") then          --replace t from mem
+                        IF (id_ex_register_s /= mem_wb_writeback) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    elsif (id_ex_forwarding="100100") then           --replace s and t from ex
+                        IF (ex_mem_aluresult /= ex_mem_aluresult) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    elsif (id_ex_forwarding="110110") then           --replace s and t from mem
+                        IF (mem_wb_writeback /= mem_wb_writeback) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    elsif (id_ex_forwarding="100110") then           --replace s from ex and t from mem
+                        IF (ex_mem_aluresult /= mem_wb_writeback) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    elsif (id_ex_forwarding="110100") then           --replace s from mem and t from ex
+                        IF (mem_wb_writeback /= ex_mem_aluresult) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    else 
+                        IF (id_ex_register_s /= id_ex_register_t) THEN 
+                            ex_mem_aluresult <= std_logic_vector(signed(id_ex_pc) + to_signed(4, 32) + shift_left(signed(id_ex_immediate_sign), 2));
+                            ex_mem_branchtaken <= '1';
+                            branch_stall<= '1';
+                            bcount :='0';
+                            -- execute_stall <= '1';
+                        ELSE
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_branchtaken <= '0';
+                            branch_stall <= '0';
+                        END IF;
+                    end if;
+
                     ex_mem_regvalue <= (others => '0');
                     ex_mem_writebackreg <= 0;
                     ex_mem_isWriteback <= '0';
                 WHEN "001000" => -- addi
-                    ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) + signed(id_ex_immediate_sign));
+                    if (id_ex_forwarding(5 downto 3)="100") then
+                        ex_mem_aluresult <= std_logic_vector(signed(ex_mem_aluresult) + signed(id_ex_immediate_sign));
+                    elsif (id_ex_forwarding(5 downto 3)="110") then
+                        ex_mem_aluresult <= std_logic_vector(signed(mem_wb_writeback) + signed(id_ex_immediate_sign));
+                    else 
+                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) + signed(id_ex_immediate_sign));
+                    end if;
+                
                     ex_mem_branchtaken <= '0';
                     ex_mem_regvalue <= (others => '0');
                     ex_mem_writebackreg <= id_ex_register_t_index;
                     ex_mem_isWriteback <= '1';
                 WHEN "001010" => -- slti
-                    ex_mem_aluresult <= (others => '0');
-                    IF (signed(id_ex_register_s) < signed(id_ex_immediate_sign)) THEN 
-                        ex_mem_aluresult(0) <= '1';
-                    END IF;
+                    if (id_ex_forwarding(5 downto 3)="100") then
+                        IF (signed(ex_mem_aluresult) < signed(id_ex_immediate_sign)) THEN 
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_aluresult(0) <= '1';
+                        else
+                            ex_mem_aluresult <= (others => '0');
+                        END IF;
+                    elsif (id_ex_forwarding(5 downto 3)="110") then
+                        IF (signed(mem_wb_writeback) < signed(id_ex_immediate_sign)) THEN 
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_aluresult(0) <= '1';
+                        else 
+                            ex_mem_aluresult <= (others => '0');
+                        END IF;
+                    else 
+                        IF (signed(id_ex_register_s) < signed(id_ex_immediate_sign)) THEN 
+                            ex_mem_aluresult <= (others => '0');
+                            ex_mem_aluresult(0) <= '1';
+                        else 
+                            ex_mem_aluresult <= (others => '0');
+                        END IF;
+                    end if;
+                    
                     ex_mem_branchtaken <= '0';
                     ex_mem_regvalue <= (others => '0');
                     ex_mem_writebackreg <= id_ex_register_t_index;
                     ex_mem_isWriteback <= '1';
                 WHEN "001100" => -- andi
-                    ex_mem_aluresult <= id_ex_register_s AND id_ex_immediate_zero;
+                    if (id_ex_forwarding(5 downto 3)="100") then
+                        ex_mem_aluresult <= ex_mem_aluresult AND id_ex_immediate_zero;
+                    elsif (id_ex_forwarding(5 downto 3)="110") then
+                        ex_mem_aluresult <= mem_wb_writeback AND id_ex_immediate_zero;
+                    else 
+                        ex_mem_aluresult <= id_ex_register_s AND id_ex_immediate_zero;
+                    end if;
+
                     ex_mem_branchtaken <= '0';
                     ex_mem_regvalue <= (others => '0');
                     ex_mem_writebackreg <= id_ex_register_t_index;
                     ex_mem_isWriteback <= '1';
                 WHEN "001101" => -- ori
-                    ex_mem_aluresult <= id_ex_register_s OR id_ex_immediate_zero;
+                    if (id_ex_forwarding(5 downto 3)="100") then
+                        ex_mem_aluresult <= ex_mem_aluresult OR id_ex_immediate_zero;
+                    elsif (id_ex_forwarding(5 downto 3)="110") then
+                        ex_mem_aluresult <= mem_wb_writeback OR id_ex_immediate_zero;
+                    else 
+                        ex_mem_aluresult <= id_ex_register_s OR id_ex_immediate_zero;
+                    end if;
+
                     ex_mem_branchtaken <= '0';
                     ex_mem_regvalue <= (others => '0');
                     ex_mem_writebackreg <= id_ex_register_t_index;
                     ex_mem_isWriteback <= '1';
                 WHEN "001110" => -- xori
-                    ex_mem_aluresult <= id_ex_register_s XOR id_ex_immediate_zero;
+                    if (id_ex_forwarding(5 downto 3)="100") then
+                        ex_mem_aluresult <= ex_mem_aluresult XOR id_ex_immediate_zero;
+                    elsif (id_ex_forwarding(5 downto 3)="110") then
+                        ex_mem_aluresult <= mem_wb_writeback XOR id_ex_immediate_zero;
+                    else 
+                        ex_mem_aluresult <= id_ex_register_s XOR id_ex_immediate_zero;
+                    end if;
+
                     ex_mem_branchtaken <= '0';
                     ex_mem_regvalue <= (others => '0');
                     ex_mem_writebackreg <= id_ex_register_t_index;
@@ -554,15 +1072,48 @@ BEGIN
                     ex_mem_writebackreg <= id_ex_register_t_index;
                     ex_mem_isWriteback <= '1';
                 WHEN "100011" => -- lw
-                    ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) + signed(id_ex_immediate_sign));
+                    if (id_ex_forwarding(5 downto 3)="100") then
+                        ex_mem_aluresult <= std_logic_vector(signed(ex_mem_aluresult) + signed(id_ex_immediate_sign));
+                    elsif (id_ex_forwarding(5 downto 3)="110") then
+                        ex_mem_aluresult <= std_logic_vector(signed(mem_wb_writeback) + signed(id_ex_immediate_sign));
+                    else 
+                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) + signed(id_ex_immediate_sign));
+                    end if;
+
                     ex_mem_branchtaken <= '0';
                     ex_mem_regvalue <= (others => '0');
                     ex_mem_writebackreg <= id_ex_register_t_index;
                     ex_mem_isWriteback <= '1';
                 WHEN "101011" => -- sw
-                    ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) + signed(id_ex_immediate_sign));
+                    if (id_ex_forwarding="100000") then             --replace s from ex
+                        ex_mem_aluresult <= std_logic_vector(signed(ex_mem_aluresult) + signed(id_ex_immediate_sign));
+                        ex_mem_regvalue <= id_ex_register_t;
+                    elsif (id_ex_forwarding="110000") then          --replace s from mem
+                        ex_mem_aluresult <= std_logic_vector(signed(mem_wb_writeback) + signed(id_ex_immediate_sign));
+                        ex_mem_regvalue <= id_ex_register_t;
+                    elsif (id_ex_forwarding="000100") then          --replace t from ex
+                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) + signed(id_ex_immediate_sign));
+                        ex_mem_regvalue <= ex_mem_aluresult;
+                    elsif (id_ex_forwarding="000110") then          --replace t from mem
+                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) + signed(id_ex_immediate_sign));
+                        ex_mem_regvalue <= mem_wb_writeback; 
+                    elsif (id_ex_forwarding="100100") then           --replace s and t from ex
+                        ex_mem_aluresult <= std_logic_vector(signed(ex_mem_aluresult) + signed(id_ex_immediate_sign));
+                        ex_mem_regvalue <= ex_mem_aluresult; 
+                    elsif (id_ex_forwarding="110110") then           --replace s and t from mem
+                        ex_mem_aluresult <= std_logic_vector(signed(mem_wb_writeback) + signed(id_ex_immediate_sign));
+                        ex_mem_regvalue <= mem_wb_writeback;
+                    elsif (id_ex_forwarding="100110") then           --replace s from ex and t from mem
+                        ex_mem_aluresult <= std_logic_vector(signed(ex_mem_aluresult) + signed(id_ex_immediate_sign));
+                        ex_mem_regvalue <= mem_wb_writeback;
+                    elsif (id_ex_forwarding="110100") then           --replace s from mem and t from ex
+                        ex_mem_aluresult <= std_logic_vector(signed(mem_wb_writeback) + signed(id_ex_immediate_sign));
+                        ex_mem_regvalue <= ex_mem_aluresult;
+                    else 
+                        ex_mem_aluresult <= std_logic_vector(signed(id_ex_register_s) + signed(id_ex_immediate_sign));
+                        ex_mem_regvalue <= id_ex_register_t;
+                    end if;
                     ex_mem_branchtaken <= '0';
-                    ex_mem_regvalue <= id_ex_register_t;
                     ex_mem_writebackreg <= id_ex_register_t_index;
                     ex_mem_isWriteback <= '0';
                 WHEN others => 
